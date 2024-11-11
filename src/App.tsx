@@ -66,7 +66,11 @@ function App() {
           
           <div className="h-[calc(100vh-12rem)]">
             {isPreview ? (
-              <DiagramPreview code={code} isFullScreen={isFullScreen} />
+              <DiagramPreview 
+                code={code} 
+                isFullScreen={isFullScreen} 
+                onFullScreenChange={setIsFullScreen}
+              />
             ) : (
               <Editor code={code} onChange={setCode} />
             )}
