@@ -97,11 +97,11 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-900 text-gray-100">
       <div className="container mx-auto px-4 py-8 flex gap-4">
         {/* Sidebar */}
         {showSidebar && (
-          <div className="w-80 bg-white rounded-xl shadow-xl p-4 space-y-4">
+          <div className="w-80 bg-gray-800 rounded-xl shadow-xl p-4 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">My Diagrams</h2>
               <button
@@ -122,14 +122,14 @@ function App() {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 bg-white rounded-xl shadow-xl overflow-hidden">
-          <div className="border-b border-gray-200">
+        <div className="flex-1 bg-gray-800 rounded-xl shadow-xl overflow-hidden">
+          <div className="border-b border-gray-700">
             <div className="px-6 py-4 flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-800">Mermaid Diagram Viewer</h1>
+              <h1 className="text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
               <div className="flex space-x-2">
                 <button
                   onClick={toggleSidebar}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                  className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
                 >
                   <List className="w-4 h-4 mr-2" />
                   {showSidebar ? 'Hide List' : 'Show List'}
