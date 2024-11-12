@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Maximize2, Minimize2, Code, Eye, Plus, List } from 'lucide-react';
+import { Code, Eye, Plus, List } from 'lucide-react';
 import { diagramStorage, type Diagram } from './services/DiagramStorage';
 import Editor from './components/Editor';
 import DiagramPreview from './components/DiagramPreview';
@@ -154,24 +154,6 @@ function App() {
                     </>
                   )}
                 </button>
-                {isPreview && (
-                  <button
-                    onClick={toggleFullScreen}
-                    className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
-                  >
-                    {isFullScreen ? (
-                      <>
-                        <Minimize2 className="w-4 h-4 mr-2" />
-                        Exit Fullscreen
-                      </>
-                    ) : (
-                      <>
-                        <Maximize2 className="w-4 h-4 mr-2" />
-                        Fullscreen
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
           </div>
