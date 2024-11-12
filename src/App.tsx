@@ -74,6 +74,12 @@ function App() {
 
   const handleCodeChange = (code: string) => {
     setCurrentDiagram(prev => ({ ...prev, code }));
+    
+    // Save changes to storage immediately
+    const updated = diagramStorage.updateDiagram(currentDiagram.id, {
+      code: code
+    });
+    setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
   };
 
   return (
