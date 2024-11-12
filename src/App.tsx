@@ -37,7 +37,7 @@ function App() {
   const [currentDiagram, setCurrentDiagram] = useState<Diagram>(DEFAULT_DIAGRAM);
   const [isPreview, setIsPreview] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   useEffect(() => {
     const stored = diagramStorage.getAllDiagrams();
