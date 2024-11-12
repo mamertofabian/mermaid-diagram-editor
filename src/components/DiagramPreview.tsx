@@ -140,7 +140,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
         </button>
         <button
           onClick={handleZoomOut}
-          className="bg-gray-200 hover:bg-gray-300 rounded-lg p-2 shadow-md"
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
           title="Zoom Out"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -151,7 +151,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
         </button>
         <button
           onClick={handleResetZoom}
-          className="bg-gray-200 hover:bg-gray-300 rounded-lg p-2 shadow-md"
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
           title="Reset Zoom"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -165,7 +165,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
       {isFullScreen && (
         <button
           onClick={() => onFullScreenChange?.(false)}
-          className="absolute top-4 left-4 z-10 bg-gray-200 hover:bg-gray-300 rounded-lg p-2 shadow-md"
+          className="absolute top-4 left-4 z-10 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
           title="Exit Full Screen"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
