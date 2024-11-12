@@ -9,6 +9,7 @@ interface DiagramPreviewProps {
 
 export default function DiagramPreview({ code, isFullScreen, onFullScreenChange }: DiagramPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -25,11 +26,11 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
 
   useEffect(() => {
     const renderDiagram = async () => {
-      if (!containerRef.current) return;
+      if (!contentRef.current) return;
       
       try {
         // Clear previous content
-        containerRef.current.innerHTML = '';
+        contentRef.current.innerHTML = '';
         
         // Generate unique ID
         const id = `mermaid-${Math.random().toString(36).slice(2)}`;
@@ -38,7 +39,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
         const { svg } = await mermaid.render(id, code);
         
         // Insert the rendered SVG
-        containerRef.current.innerHTML = svg;
+        contentRef.current.innerHTML = svg;
 
         // Reset zoom and scroll when diagram changes
         setZoomLevel(1);
@@ -183,7 +184,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
         ref={containerRef}
       >
         <div
-          ref={containerRef}
+          ref={contentRef}
           className="w-full h-full flex items-center justify-center p-8"
           style={{
             transform: `scale(${zoomLevel}) translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
