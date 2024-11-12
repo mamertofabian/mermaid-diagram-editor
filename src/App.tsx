@@ -3,6 +3,7 @@ import { Maximize2, Minimize2, Code, Eye, Plus, List } from 'lucide-react';
 import { diagramStorage, type Diagram } from './services/DiagramStorage';
 import Editor from './components/Editor';
 import DiagramPreview from './components/DiagramPreview';
+import DiagramList from './components/DiagramList';
 
 const DEFAULT_DIAGRAM = {
   id: 'default',
