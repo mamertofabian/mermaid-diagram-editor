@@ -125,15 +125,19 @@ function App() {
         <div className="flex-1 bg-gray-800 rounded-xl shadow-xl overflow-hidden">
           <div className="border-b border-gray-700">
             <div className="px-6 py-4 flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
+              <div className="flex items-center space-x-4">
+                {!showSidebar && (
+                  <button
+                    onClick={toggleSidebar}
+                    className="p-2 text-gray-300 hover:text-gray-100 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                    title="Show List"
+                  >
+                    <List className="w-5 h-5" />
+                  </button>
+                )}
+                <h1 className="text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
+              </div>
               <div className="flex space-x-2">
-                <button
-                  onClick={toggleSidebar}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
-                >
-                  <List className="w-4 h-4 mr-2" />
-                  {showSidebar ? 'Hide List' : 'Show List'}
-                </button>
                 <button
                   onClick={toggleView}
                   className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
