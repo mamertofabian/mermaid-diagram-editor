@@ -98,6 +98,24 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
     setZoomLevel(newZoom);
   };
 
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const wheelHandler = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomSensitivity = 0.001;
+      const delta = -e.deltaY * zoomSensitivity;
+      setZoomLevel(prev => Math.max(0.5, Math.min(3, prev + delta)));
+    };
+
+    element.addEventListener('wheel', wheelHandler, { passive: false });
+    
+    return () => {
+      element.removeEventListener('wheel', wheelHandler);
+    };
+  }, []);
+
   return (
     <div 
       className={`
@@ -162,7 +180,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
+        ref={containerRef}
       >
         <div
           ref={containerRef}
