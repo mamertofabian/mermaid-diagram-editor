@@ -7,13 +7,27 @@ import DiagramList from './components/DiagramList';
 
 const DEFAULT_DIAGRAM = {
   id: 'default',
-  name: 'Example Diagram',
+  name: 'Welcome to Mermaid Diagram Editor',
   code: `graph TD
-    A[Start] --> B{Is it?}
-    B -- Yes --> C[OK]
-    C --> D[Rethink]
-    D --> B
-    B -- No --> E[End]`,
+    Start[Get Started] --> Create[Click + to Create New Diagram]
+    Start --> Edit[Edit Existing Diagrams]
+    Start --> Preview[Toggle Preview/Code View]
+    
+    Create --> Name[Enter Diagram Name]
+    Name --> Code[Write Mermaid Code]
+    
+    Edit --> List[Click List Button]
+    List --> Select[Select a Diagram]
+    Select --> Modify[Edit or Delete]
+    
+    Preview --> View[Eye Icon: Preview Mode]
+    Preview --> Source[Code Icon: Edit Mode]
+    Preview --> FullScreen[Expand Icon: Full Screen]
+    
+    style Start fill:#f9f,stroke:#333,stroke-width:4px
+    style Preview fill:#bbf,stroke:#333
+    style Edit fill:#bfb,stroke:#333
+    style Create fill:#fbf,stroke:#333`,
   createdAt: Date.now(),
   updatedAt: Date.now(),
 };
