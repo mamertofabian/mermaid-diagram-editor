@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Code, Eye, Plus, List } from 'lucide-react';
+import { Code, Eye, Plus, List, FolderPlus } from 'lucide-react';
+import CreateDiagramModal from './components/CreateDiagramModal';
 import { diagramStorage, type Diagram } from './services/DiagramStorage';
 import Editor from './components/Editor';
 import DiagramPreview from './components/DiagramPreview';
@@ -48,10 +49,9 @@ function App() {
   const toggleFullScreen = () => setIsFullScreen(!isFullScreen);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
 
-  const handleCreateNew = () => {
-    const name = prompt('Enter diagram name:');
-    if (!name) return;
-    
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const handleCreateNew = (name: string) => {
     const newDiagram = diagramStorage.saveDiagram(name, 'graph TD\n  A[Start] --> B[End]');
     setDiagrams([...diagrams, newDiagram]);
     setCurrentDiagram(newDiagram);
@@ -105,11 +105,12 @@ function App() {
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">My Diagrams</h2>
               <button
-                onClick={handleCreateNew}
-                className="p-2 text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-100"
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
                 title="Create New Diagram"
               >
-                <Plus className="w-5 h-5" />
+                <FolderPlus className="w-5 h-5" />
+                <span className="text-sm font-medium">New Diagram</span>
               </button>
             </div>
             <DiagramList
@@ -175,6 +176,11 @@ function App() {
           </div>
         </div>
       </div>
+      <CreateDiagramModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onConfirm={handleCreateNew}
+      />
     </div>
   );
 }
