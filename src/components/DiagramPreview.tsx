@@ -49,7 +49,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
         if (containerRef.current) {
           containerRef.current.innerHTML = `
             <div class="flex items-center justify-center h-full">
-              <p class="text-red-500 font-medium">Invalid Mermaid syntax</p>
+              <p class="text-red-400 font-medium">Invalid Mermaid syntax</p>
             </div>
           `;
         }
@@ -120,7 +120,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
   return (
     <div 
       className={`
-        ${isFullScreen ? 'fixed inset-0 z-50 bg-white' : 'relative w-full h-full'}
+        ${isFullScreen ? 'fixed inset-0 z-50 bg-gray-900' : 'relative w-full h-full'}
         flex flex-col
       `}
     >
@@ -128,7 +128,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
       <div className="absolute top-4 right-4 flex gap-2 z-10">
         <button
           onClick={handleZoomIn}
-          className="bg-gray-200 hover:bg-gray-300 rounded-lg p-2 shadow-md"
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
           title="Zoom In"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

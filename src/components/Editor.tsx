@@ -18,7 +18,7 @@ export default function Editor({ code, onChange, onSave }: EditorProps) {
       onKeyDown={handleKeyDown}
       value={code}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full h-full p-4 font-mono text-sm bg-gray-50 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+      className="w-full h-full p-4 font-mono text-sm bg-gray-800 text-gray-100 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
       placeholder="Paste your Mermaid diagram code here..."
       spellCheck={false}
     />
