@@ -1,7 +1,8 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "mermaid-diagram-editor",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A modern web-based editor for creating and managing Mermaid diagrams with real-time preview",
   "type": "module",
   "scripts": {
     "dev": "vite",
