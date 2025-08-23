@@ -94,6 +94,44 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
     setScrollPosition({ x: 0, y: 0 });
   };
 
+  const handleAutoFit = () => {
+    if (!contentRef.current || !containerRef.current) return;
+    
+    const svgElement = contentRef.current.querySelector('svg');
+    if (!svgElement) return;
+    
+    try {
+      // Get container dimensions (viewport)
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const containerWidth = containerRect.width - 64; // Account for padding (32px each side)
+      const containerHeight = containerRect.height - 64;
+      
+      // Get actual SVG dimensions at current zoom level
+      const svgRect = svgElement.getBoundingClientRect();
+      const actualSvgWidth = svgRect.width / zoomLevel; // Normalize to zoom level 1
+      const actualSvgHeight = svgRect.height / zoomLevel;
+      
+      // Calculate scale factors for both dimensions
+      const scaleX = containerWidth / actualSvgWidth;
+      const scaleY = containerHeight / actualSvgHeight;
+      
+      // Use the smaller scale to ensure the diagram fits completely
+      // Also add some padding (90% of available space)
+      const optimalScale = Math.min(scaleX, scaleY) * 0.9;
+      
+      // Respect zoom limits
+      const finalScale = Math.max(0.5, Math.min(3, optimalScale));
+      
+      // Apply the zoom and center the diagram
+      setZoomLevel(finalScale);
+      setScrollPosition({ x: 0, y: 0 });
+    } catch (error) {
+      console.error('Auto-fit calculation error:', error);
+      // Fallback to reset zoom if calculation fails
+      handleResetZoom();
+    }
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     // Always allow right-click panning regardless of toggle state
     if (e.button === 2) {
@@ -195,6 +233,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onResetZoom={handleResetZoom}
+          onAutoFit={handleAutoFit}
         />
         
         <FullScreenToggle
