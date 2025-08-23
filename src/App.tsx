@@ -3,6 +3,7 @@ import { Code, Eye, List, FolderPlus, Copy, Check, FileText, HelpCircle } from '
 import CreateDiagramModal from './components/CreateDiagramModal';
 import TemplatesModal from './components/TemplatesModal';
 import HelpModal from './components/HelpModal';
+import AboutModal from './components/AboutModal';
 import AlertModal from './components/AlertModal';
 import ConfirmModal from './components/ConfirmModal';
 import PromptModal from './components/PromptModal';
@@ -30,6 +31,7 @@ function App() {
   // Modal states
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   const [alertModal, setAlertModal] = useState<{
@@ -523,13 +525,15 @@ function App() {
       setShowTemplatesModal(false);
     } else if (showHelpModal) {
       setShowHelpModal(false);
+    } else if (showAboutModal) {
+      setShowAboutModal(false);
     } else if (showCollectionModal) {
       setShowCollectionModal(false);
     }
   };
 
   // Check if any modal is open
-  const isModalOpen = alertModal.isOpen || confirmModal.isOpen || promptModal.isOpen || showCreateModal || showTemplatesModal || showHelpModal || showCollectionModal;
+  const isModalOpen = alertModal.isOpen || confirmModal.isOpen || promptModal.isOpen || showCreateModal || showTemplatesModal || showHelpModal || showAboutModal || showCollectionModal;
 
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
@@ -605,6 +609,7 @@ function App() {
                 onShare={handleShare}
                 onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
                 onShowTutorial={() => setCurrentDiagram(TUTORIAL_DIAGRAM)}
+                onShowAbout={() => setShowAboutModal(true)}
                 onAddToCollection={handleAddDiagramToCollection}
                 onRemoveFromCollection={handleRemoveDiagramFromCollection}
                 onCreateCollection={handleCreateCollection}
@@ -725,11 +730,16 @@ function App() {
         onClose={() => setShowHelpModal(false)}
       />
       
+      <AboutModal
+        isOpen={showAboutModal}
+        onClose={() => setShowAboutModal(false)}
+      />
+      
       <CollectionModal
         isOpen={showCollectionModal}
         onClose={() => setShowCollectionModal(false)}
         onConfirm={handleCollectionModalConfirm}
-        collection={editingCollection}
+        collection={editingCollection || undefined}
       />
 
       {/* Custom Modals */}

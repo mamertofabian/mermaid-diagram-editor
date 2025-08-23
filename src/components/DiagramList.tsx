@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { Diagram, Collection } from '../services/DiagramStorage';
-import { Download, Upload, HelpCircle, Info, ExternalLink, Calendar, Youtube, Github, BookOpen, Plus, Search, ChevronDown, ChevronRight, X, Edit3, Trash2 } from 'lucide-react';
+import { Download, Upload, HelpCircle, Info, BookOpen, Plus, Search, ChevronDown, ChevronRight, X, Edit3, Trash2 } from 'lucide-react';
 import { diagramExportImport } from '../services/DiagramExportImport';
 import CollectionBadge from './CollectionBadge';
 import DiagramDropdown from './DiagramDropdown';
@@ -20,6 +20,7 @@ interface DiagramListProps {
   onShare: (diagram: Diagram) => void;
   onShowWelcome: () => void;
   onShowTutorial: () => void;
+  onShowAbout: () => void;
   onAddToCollection: (diagramId: string, collectionId: string) => void;
   onRemoveFromCollection: (diagramId: string, collectionId: string) => void;
   onCreateCollection: () => void;
@@ -41,6 +42,7 @@ export default function DiagramList({
   onShare, 
   onShowWelcome, 
   onShowTutorial,
+  onShowAbout,
   onAddToCollection,
   onRemoveFromCollection,
   onCreateCollection,
@@ -76,7 +78,7 @@ export default function DiagramList({
         collection,
         diagrams: collectionDiagrams
       };
-    }).filter(item => item.diagrams.length > 0 || collection.name.toLowerCase().includes(searchLower));
+    }).filter(item => item.diagrams.length > 0 || item.collection.name.toLowerCase().includes(searchLower));
 
     // Get uncategorized diagrams (not in any collection)
     const uncategorized = diagrams.filter(diagram => 
@@ -204,7 +206,7 @@ export default function DiagramList({
             const isExpanded = expandedCollections.has(collection.id);
             const iconName = (collection.icon?.split('-').map(word => 
               word.charAt(0).toUpperCase() + word.slice(1)).join('') || 'Folder') as keyof typeof LucideIcons;
-            const IconComponent = LucideIcons[iconName] || LucideIcons.Folder;
+            const IconComponent = (LucideIcons[iconName] || LucideIcons.Folder) as React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
             return (
               <div key={collection.id} className="border border-gray-600 rounded-lg">
@@ -472,106 +474,16 @@ export default function DiagramList({
         </button>
       </div>
 
-      {/* About Section - Fixed at bottom */}
+      {/* About Button - Fixed at bottom */}
       <div className="mt-4 pt-3 border-t border-gray-600 flex-shrink-0">
-        <div className="p-3">
-          <div className="flex items-center gap-2 mb-3">
-            <Info className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-semibold text-gray-200">About</span>
-          </div>
-          
-          <div className="text-xs text-gray-400 space-y-2">
-            <div>
-              <div className="font-medium text-gray-300">Mamerto Fabian</div>
-              <div>Founder & AI Solutions Architect</div>
-              <div className="text-blue-400">Codefrost | AI-Driven Coder</div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 pt-2">
-              <a
-                href="https://calendly.com/mamerto/30min"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs transition-colors"
-                title="Book a Consultation"
-              >
-                <Calendar className="w-3 h-3" />
-                <span>Book</span>
-              </a>
-              
-              <a
-                href="https://youtube.com/@aidrivencoder"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs transition-colors"
-                title="AI-Driven Coder YouTube"
-              >
-                <Youtube className="w-3 h-3" />
-                <span>YouTube</span>
-              </a>
-              
-              <a
-                href="https://codefrost.dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs transition-colors"
-                title="Codefrost"
-              >
-                <ExternalLink className="w-3 h-3" />
-                <span>Codefrost</span>
-              </a>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              <a
-                href="https://github.com/mamertofabian"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs transition-colors"
-                title="GitHub Profile"
-              >
-                <Github className="w-3 h-3" />
-                <span>@mamertofabian</span>
-              </a>
-              
-              <a
-                href="https://mamerto.codefrost.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs transition-colors"
-                title="Portfolio"
-              >
-                <ExternalLink className="w-3 h-3" />
-                <span>Portfolio</span>
-              </a>
-            </div>
-            
-            <div className="pt-1">
-              <a
-                href="https://mermaid.codefrost.dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 text-xs underline"
-                title="Live Demo"
-              >
-                🚀 Live App: mermaid.codefrost.dev
-              </a>
-            </div>
-            
-            <div>
-              <a
-                href="https://github.com/mamertofabian/mermaid-diagram-editor"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1"
-                title="Source Code"
-              >
-                <Github className="w-3 h-3" />
-                <span>View Source Code</span>
-              </a>
-            </div>
-          </div>
-        </div>
+        <button
+          onClick={onShowAbout}
+          className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-gray-400 hover:text-gray-200 hover:bg-gray-600"
+          title="About the Author"
+        >
+          <Info className="w-4 h-4 text-blue-400" />
+          <span className="text-sm">About the Author</span>
+        </button>
       </div>
     </div>
   );
