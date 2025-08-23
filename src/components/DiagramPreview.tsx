@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface DiagramPreviewProps {
   code: string;
@@ -64,6 +66,309 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     onThemeChange(newTheme);
+  };
+
+  const exportToPDF = async () => {
+    if (!contentRef.current) return;
+    
+    try {
+      // Show loading state
+      const exportButton = document.querySelector('[data-export-pdf]') as HTMLButtonElement;
+      if (exportButton) {
+        exportButton.disabled = true;
+        exportButton.innerHTML = `
+          <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        `;
+      }
+
+      // Store original styles
+      const originalTransform = contentRef.current.style.transform;
+      const originalOverflow = containerRef.current?.style.overflow || '';
+      
+      // Temporarily reset zoom and scroll to show full diagram
+      contentRef.current.style.transform = 'scale(1) translate(0px, 0px)';
+      if (containerRef.current) {
+        containerRef.current.style.overflow = 'visible';
+      }
+
+      // Wait a bit for the layout to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Convert the diagram content to canvas with full content
+      const canvas = await html2canvas(contentRef.current, {
+        backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937',
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: contentRef.current.scrollWidth,
+        height: contentRef.current.scrollHeight,
+      });
+
+      // Restore original styles
+      contentRef.current.style.transform = originalTransform;
+      if (containerRef.current) {
+        containerRef.current.style.overflow = originalOverflow;
+      }
+
+      // Determine best orientation based on diagram dimensions
+      const aspectRatio = canvas.width / canvas.height;
+      const isLandscape = aspectRatio > 1;
+      
+      // Create PDF with appropriate orientation
+      const pdf = new jsPDF({
+        orientation: isLandscape ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      // Get page dimensions
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Calculate image dimensions to fit the page with margins
+      const margin = 10; // 10mm margin on all sides
+      const maxWidth = pageWidth - (2 * margin);
+      const maxHeight = pageHeight - (2 * margin);
+      
+      let imgWidth, imgHeight;
+      
+      if (isLandscape) {
+        // For landscape diagrams, fit to width
+        imgWidth = maxWidth;
+        imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // If height exceeds page, scale down proportionally
+        if (imgHeight > maxHeight) {
+          imgHeight = maxHeight;
+          imgWidth = (canvas.width * imgHeight) / canvas.height;
+        }
+      } else {
+        // For portrait diagrams, fit to height
+        imgHeight = maxHeight;
+        imgWidth = (canvas.width * imgHeight) / canvas.height;
+        
+        // If width exceeds page, scale down proportionally
+        if (imgWidth > maxWidth) {
+          imgWidth = maxWidth;
+          imgHeight = (canvas.height * imgWidth) / canvas.width;
+        }
+      }
+      
+      // Center the image on the page
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const filename = `mermaid-diagram-${timestamp}.pdf`;
+      
+      // Download the PDF
+      pdf.save(filename);
+
+    } catch (error) {
+      console.error('PDF export error:', error);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      // Restore button state
+      const exportButton = document.querySelector('[data-export-pdf]') as HTMLButtonElement;
+      if (exportButton) {
+        exportButton.disabled = false;
+        exportButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10,9 9,9 8,9"/>
+          </svg>
+        `;
+      }
+    }
+  };
+
+  const printToPDF = () => {
+    // Create a new window with just the diagram for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to use the print feature.');
+      return;
+    }
+
+    const diagramContent = contentRef.current?.innerHTML || '';
+    const backgroundColor = theme === 'light' ? '#ffffff' : '#1f2937';
+    const textColor = theme === 'light' ? '#000000' : '#ffffff';
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Mermaid Diagram - Print</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              background-color: ${backgroundColor};
+              color: ${textColor};
+              font-family: Arial, sans-serif;
+            }
+            .diagram-container {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+            }
+            .diagram-container svg {
+              max-width: 100%;
+              max-height: 100vh;
+            }
+            @media print {
+              body { margin: 0; }
+              .diagram-container { min-height: auto; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="diagram-container">
+            ${diagramContent}
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 100);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const exportToSVG = () => {
+    if (!contentRef.current) return;
+    
+    const svgElement = contentRef.current.querySelector('svg');
+    if (!svgElement) {
+      alert('No diagram to export.');
+      return;
+    }
+
+    try {
+      // Clone the SVG to avoid modifying the original
+      const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+      
+      // Set background color based on theme
+      const backgroundColor = theme === 'light' ? '#ffffff' : '#1f2937';
+      clonedSvg.style.backgroundColor = backgroundColor;
+      
+      // Convert SVG to string
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(clonedSvg);
+      
+      // Create blob and download
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `mermaid-diagram-${Date.now()}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('SVG export error:', error);
+      alert('Failed to export SVG. Please try again.');
+    }
+  };
+
+  const exportToPNG = async () => {
+    if (!contentRef.current) return;
+    
+    try {
+      // Show loading state
+      const pngButton = document.querySelector('[data-export-png]') as HTMLButtonElement;
+      if (pngButton) {
+        pngButton.disabled = true;
+        pngButton.innerHTML = `
+          <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        `;
+      }
+
+      // Store original styles
+      const originalTransform = contentRef.current.style.transform;
+      const originalOverflow = containerRef.current?.style.overflow || '';
+      
+      // Temporarily reset zoom and scroll to show full diagram
+      contentRef.current.style.transform = 'scale(1) translate(0px, 0px)';
+      if (containerRef.current) {
+        containerRef.current.style.overflow = 'visible';
+      }
+
+      // Wait a bit for the layout to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Convert the diagram content to canvas with full content
+      const canvas = await html2canvas(contentRef.current, {
+        backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937',
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: contentRef.current.scrollWidth,
+        height: contentRef.current.scrollHeight,
+      });
+
+      // Restore original styles
+      contentRef.current.style.transform = originalTransform;
+      if (containerRef.current) {
+        containerRef.current.style.overflow = originalOverflow;
+      }
+
+      // Convert canvas to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `mermaid-diagram-${Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png');
+
+    } catch (error) {
+      console.error('PNG export error:', error);
+      alert('Failed to export PNG. Please try again.');
+    } finally {
+      // Restore button state
+      const pngButton = document.querySelector('[data-export-png]') as HTMLButtonElement;
+      if (pngButton) {
+        pngButton.disabled = false;
+        pngButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21,15 16,10 5,21"/>
+          </svg>
+        `;
+      }
+    }
   };
 
   const handleZoomIn = () => {
@@ -149,6 +454,53 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
             </svg>
           )}
+        </button>
+        <button
+          onClick={exportToPDF}
+          data-export-pdf
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
+          title="Export to PDF"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10,9 9,9 8,9"/>
+          </svg>
+        </button>
+        <button
+          onClick={printToPDF}
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
+          title="Print to PDF"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 11H5M19 6H5M19 16H5"/>
+          </svg>
+        </button>
+        <button
+          onClick={exportToSVG}
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
+          title="Export to SVG"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <path d="M9 15h6"/>
+            <path d="M9 11h6"/>
+          </svg>
+        </button>
+        <button
+          onClick={exportToPNG}
+          data-export-png
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
+          title="Export to PNG"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21,15 16,10 5,21"/>
+          </svg>
         </button>
         <button
           onClick={handleZoomIn}
