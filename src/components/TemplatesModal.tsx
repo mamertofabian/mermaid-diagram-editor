@@ -91,7 +91,7 @@ export default function TemplatesModal({ isOpen, onClose, onSelectTemplate }: Te
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl w-full max-w-5xl xl:max-w-7xl 2xl:max-w-[90vw] max-h-[95vh] overflow-hidden flex flex-col">
+      <div className="bg-gray-800 rounded-xl w-full max-w-4xl xl:max-w-5xl 2xl:max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-700">
           <div className="flex items-center gap-3">
