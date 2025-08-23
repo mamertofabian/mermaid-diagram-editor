@@ -6,6 +6,8 @@ import { diagramExportImport } from '../services/DiagramExportImport';
 interface DiagramListProps {
   diagrams: Diagram[];
   currentDiagramId?: string;
+  isWelcomeActive?: boolean;
+  isTutorialActive?: boolean;
   onSelect: (diagram: Diagram) => void;
   onDelete: (id: string) => void;
   onRename: (diagram: Diagram) => void;
@@ -16,7 +18,7 @@ interface DiagramListProps {
   onShowTutorial: () => void;
 }
 
-export default function DiagramList({ diagrams, currentDiagramId, onSelect, onDelete, onRename, onImport, onExportSingle, onShare, onShowWelcome, onShowTutorial }: DiagramListProps) {
+export default function DiagramList({ diagrams, currentDiagramId, isWelcomeActive, isTutorialActive, onSelect, onDelete, onRename, onImport, onExportSingle, onShare, onShowWelcome, onShowTutorial }: DiagramListProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportAll = () => {
@@ -168,7 +170,11 @@ export default function DiagramList({ diagrams, currentDiagramId, onSelect, onDe
       <div className="mt-4 pt-3 border-t border-gray-600 flex-shrink-0 space-y-2">
         <button
           onClick={onShowWelcome}
-          className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-gray-200 hover:bg-gray-600 rounded-lg transition-colors"
+          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
+            isWelcomeActive
+              ? 'bg-blue-600 border-2 border-blue-400 text-white'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-600'
+          }`}
           title="Show Welcome Guide"
         >
           <HelpCircle className="w-4 h-4" />
@@ -177,7 +183,11 @@ export default function DiagramList({ diagrams, currentDiagramId, onSelect, onDe
         
         <button
           onClick={onShowTutorial}
-          className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-gray-200 hover:bg-gray-600 rounded-lg transition-colors"
+          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
+            isTutorialActive
+              ? 'bg-blue-600 border-2 border-blue-400 text-white'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-600'
+          }`}
           title="Show Mermaid Tutorial"
         >
           <BookOpen className="w-4 h-4" />

@@ -435,6 +435,8 @@ function App() {
               <DiagramList
                 diagrams={diagrams}
                 currentDiagramId={currentDiagram.id}
+                isWelcomeActive={currentDiagram.id === WELCOME_DIAGRAM.id}
+                isTutorialActive={currentDiagram.id === TUTORIAL_DIAGRAM.id}
                 onSelect={setCurrentDiagram}
                 onDelete={handleDelete}
                 onRename={handleRename}
