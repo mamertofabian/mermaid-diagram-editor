@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import '../print.css';
 import ExportDropdown from './DiagramPreview/ExportDropdown';
 import ZoomControls from './DiagramPreview/ZoomControls';
@@ -31,6 +34,8 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const [isPanningEnabled, setIsPanningEnabled] = useState(true);
   const [lastTouchDistance, setLastTouchDistance] = useState(0);
+  const [showSecondRow, setShowSecondRow] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     mermaid.initialize({
@@ -93,6 +98,200 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     onThemeChange(newTheme);
+  };
+
+  // Export functions for mobile buttons
+  const exportToPDF = async () => {
+    if (!contentRef.current) return;
+    
+    try {
+      setIsExporting(true);
+      const originalTransform = contentRef.current.style.transform;
+      const originalOverflow = containerRef.current?.style.overflow || '';
+      
+      contentRef.current.style.transform = 'scale(1) translate(0px, 0px)';
+      if (containerRef.current) {
+        containerRef.current.style.overflow = 'visible';
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(contentRef.current, {
+        backgroundColor: theme === 'light' ? '#ffffff' : '#f8fafc',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: contentRef.current.scrollWidth,
+        height: contentRef.current.scrollHeight,
+      });
+
+      contentRef.current.style.transform = originalTransform;
+      if (containerRef.current) {
+        containerRef.current.style.overflow = originalOverflow;
+      }
+
+      const aspectRatio = canvas.width / canvas.height;
+      const isLandscape = aspectRatio > 1;
+      
+      const pdf = new jsPDF({
+        orientation: isLandscape ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const margin = 10;
+      const maxWidth = pageWidth - (2 * margin);
+      const maxHeight = pageHeight - (2 * margin);
+      
+      let imgWidth, imgHeight;
+      
+      if (isLandscape) {
+        imgWidth = maxWidth;
+        imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        if (imgHeight > maxHeight) {
+          imgHeight = maxHeight;
+          imgWidth = (canvas.width * imgHeight) / canvas.height;
+        }
+      } else {
+        imgHeight = maxHeight;
+        imgWidth = (canvas.width * imgHeight) / canvas.height;
+        
+        if (imgWidth > maxWidth) {
+          imgWidth = maxWidth;
+          imgHeight = (canvas.height * imgWidth) / canvas.width;
+        }
+      }
+      
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+      
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const filename = `mermaid-diagram-${timestamp}.pdf`;
+      
+      pdf.save(filename);
+
+    } catch (error) {
+      console.error('PDF export error:', error);
+      onAlert?.('Failed to export PDF. Please try again.', 'Export Failed', 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportToPNG = async () => {
+    if (!contentRef.current) return;
+    
+    try {
+      setIsExporting(true);
+      const originalTransform = contentRef.current.style.transform;
+      const originalOverflow = containerRef.current?.style.overflow || '';
+      
+      contentRef.current.style.transform = 'scale(1) translate(0px, 0px)';
+      if (containerRef.current) {
+        containerRef.current.style.overflow = 'visible';
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(contentRef.current, {
+        backgroundColor: theme === 'light' ? '#ffffff' : '#f8fafc',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: contentRef.current.scrollWidth,
+        height: contentRef.current.scrollHeight,
+      });
+
+      contentRef.current.style.transform = originalTransform;
+      if (containerRef.current) {
+        containerRef.current.style.overflow = originalOverflow;
+      }
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `mermaid-diagram-${Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png');
+
+    } catch (error) {
+      console.error('PNG export error:', error);
+      onAlert?.('Failed to export PNG. Please try again.', 'Export Failed', 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportToSVG = () => {
+    if (!contentRef.current) return;
+    
+    const svgElement = contentRef.current.querySelector('svg');
+    if (!svgElement) {
+      onAlert?.('No diagram to export.', 'Export Failed', 'warning');
+      return;
+    }
+
+    try {
+      const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+      const backgroundColor = theme === 'light' ? '#ffffff' : '#f8fafc';
+      clonedSvg.style.backgroundColor = backgroundColor;
+      
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(clonedSvg);
+      
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `mermaid-diagram-${Date.now()}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('SVG export error:', error);
+      onAlert?.('Failed to export SVG. Please try again.', 'Export Failed', 'error');
+    }
+  };
+
+  const exportToMmd = () => {
+    try {
+      const content = code;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      const safeFileName = diagramName.replace(/[^a-zA-Z0-9-_\s]/g, '');
+      const filename = `${safeFileName}.mmd`;
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('MMD export error:', error);
+      onAlert?.('Failed to export MMD file. Please try again.', 'Export Failed', 'error');
+    }
   };
 
   const handleZoomIn = () => {
@@ -313,11 +512,11 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
         />
       </div>
 
-      {/* Mobile Controls - Bottom bar with horizontal scroll */}
+      {/* Mobile Controls - 2-row layout with toggle */}
       <div className="absolute bottom-2 left-2 right-2 sm:hidden bg-gray-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-gray-600 z-30 animate-in slide-in-from-bottom-2 duration-300">
-        <div className="flex gap-2 overflow-x-auto overflow-y-visible scrollbar-hide">
-          {/* All controls in one scrollable row */}
-          <div className="flex gap-2 flex-shrink-0 min-w-max">
+        {/* First Row - Core Controls */}
+        <div className={`flex gap-2 justify-between items-center ${showSecondRow ? 'mb-2' : 'mb-0'} transition-all duration-300`}>
+          <div className="flex gap-2">
             <ControlButtons
               isPanningEnabled={isPanningEnabled}
               onPanningToggle={() => setIsPanningEnabled(!isPanningEnabled)}
@@ -332,19 +531,85 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
               onAutoFit={handleAutoFit}
             />
             
-            <ExportDropdown
-              contentRef={contentRef}
-              containerRef={containerRef}
-              theme={theme}
-              diagramCode={code}
-              diagramName={diagramName}
-              onAlert={onAlert}
-            />
-            
             <FullScreenToggle
               isFullScreen={isFullScreen}
               onFullScreenChange={onFullScreenChange}
             />
+          </div>
+          
+          {/* Row toggle button */}
+          <button
+            onClick={() => setShowSecondRow(!showSecondRow)}
+            className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] w-[40px] flex items-center justify-center transition-all duration-300"
+            title={showSecondRow ? "Hide Export Options" : "Show Export Options"}
+          >
+            {showSecondRow ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronUp className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+        
+        {/* Second Row - Export Options */}
+        <div className={`
+          ${showSecondRow ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}
+          overflow-hidden transition-all duration-300 ease-out
+        `}>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={exportToPDF}
+              disabled={isExporting}
+              className={`bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors flex-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Export to PDF"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+              </svg>
+              <span className="ml-1 text-xs font-medium">PDF</span>
+            </button>
+            
+            <button
+              onClick={exportToPNG}
+              disabled={isExporting}
+              className={`bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors flex-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Export to PNG"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21,15 16,10 5,21"/>
+              </svg>
+              <span className="ml-1 text-xs font-medium">PNG</span>
+            </button>
+            
+            <button
+              onClick={exportToSVG}
+              disabled={isExporting}
+              className={`bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors flex-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Export to SVG"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+              </svg>
+              <span className="ml-1 text-xs font-medium">SVG</span>
+            </button>
+            
+            <button
+              onClick={exportToMmd}
+              disabled={isExporting}
+              className={`bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors flex-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Export as .mmd file"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <path d="M12 17V7m0 10l-3-3m3 3l3-3"/>
+              </svg>
+              <span className="ml-1 text-xs font-medium">MMD</span>
+            </button>
           </div>
         </div>
       </div>

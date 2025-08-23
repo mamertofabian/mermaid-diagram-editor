@@ -427,18 +427,18 @@ function App() {
           <>
             {/* Mobile backdrop */}
             <div 
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-500 ease-out"
               onClick={toggleSidebar}
             />
             
             {/* Sidebar */}
             <div className={`
-              ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
+              ${showSidebar ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}
               fixed md:relative top-0 left-0 z-50 md:z-auto
               w-80 md:w-80 
               bg-gray-800 rounded-xl shadow-xl p-4 
               flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]
-              transform transition-transform duration-300 ease-in-out md:transform-none
+              transform transition-all duration-500 ease-out md:transform-none md:opacity-100
             `}>
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold">My Diagrams</h2>

@@ -94,7 +94,7 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
     description: 'Git workflow with feature branches',
     category: 'Git',
     icon: '🌿',
-    code: `gitgraph
+    code: `gitGraph
     commit id: "Initial"
     branch feature
     checkout feature
