@@ -26,10 +26,11 @@ A modern, feature-rich web-based editor for creating and managing Mermaid diagra
 - 💾 **Auto-backup system** - Export all diagrams as JSON backup
 
 ### 🚀 **Export & Print**
-- 📄 **Multi-format export**: PDF, PNG, SVG
+- 📄 **Multi-format export**: PDF, PNG, SVG, MMD
 - 🖨️ **Print optimization** - Clean, centered printing via Ctrl+P
-- 📱 **Mobile-friendly** exports and responsive design
+- 📱 **Enhanced mobile controls** - 2-row layout with expandable export options
 - ⚡ **High-quality exports** with proper scaling and backgrounds
+- 🎮 **Smooth animations** - Fluid sidebar transitions and control animations
 
 ### 🎯 **User Experience**
 - ✨ **Custom modal system** - No ugly browser alerts/confirms
@@ -82,6 +83,7 @@ The application will be available at `http://localhost:5173`
 - **Pan**: Left-click drag (toggleable) or right-click drag (always enabled)  
 - **Full-screen**: Click expand icon for distraction-free viewing
 - **Themes**: Switch between light/dark themes for optimal contrast
+- **Mobile**: 2-row control layout with expandable export buttons and smooth animations
 
 ### 🔗 **Sharing & Export**
 - **Share**: Click share icon to generate URL and copy to clipboard

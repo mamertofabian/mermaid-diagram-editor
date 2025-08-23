@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build for production**: `npm run build`
 - **Lint code**: `npm run lint`
 - **Preview production build**: `npm run preview`
+- **Type checking**: TypeScript checking is handled by the build process and editor
 
 ## Architecture Overview
 
@@ -25,7 +26,8 @@ This is a React + TypeScript web application for creating and editing Mermaid di
 ### Key Components Structure
 
 - **App.tsx**: Main application container managing global state (diagrams, current diagram, view modes)
-- **DiagramPreview.tsx**: Complex component handling Mermaid rendering, zoom/pan controls, theme switching, and export functionality
+- **DiagramPreview.tsx**: Complex modular component handling Mermaid rendering, zoom/pan controls, theme switching, and export functionality
+  - **DiagramPreview/**: Subcomponents for ControlButtons, DiagramCanvas, ExportDropdown, FullScreenToggle, ZoomControls
 - **Editor.tsx**: Simple textarea-based code editor with auto-save on changes
 - **DiagramList.tsx**: Sidebar component for diagram management (select, rename, delete)
 - **CreateDiagramModal.tsx**: Modal for creating new diagrams
@@ -53,6 +55,7 @@ This is a React + TypeScript web application for creating and editing Mermaid di
 - **Error Boundaries**: Mermaid rendering includes try/catch blocks for graceful error handling
 - **Responsive Design**: Tailwind classes provide mobile-friendly layout
 - **Auto-save**: All changes (code, theme, name) are immediately persisted to localStorage
+- **Print Optimization**: Custom print.css provides clean diagram-only printing with centered layout
 
 ### Additional Services & Utilities
 

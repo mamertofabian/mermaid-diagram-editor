@@ -29,15 +29,15 @@ const WELCOME_DIAGRAM = {
     
     Share --> ShareOptions["🔗 Generate shareable URLs<br/>📋 Copy links to clipboard<br/>🌐 Open shared diagrams instantly"]
     
-    Editor --> EditorFeatures["👁️ Live preview mode<br/>📝 Code editor with syntax<br/>🎨 Light/dark themes<br/>🔍 Zoom & pan controls"]
+    Editor --> EditorFeatures["👁️ Live preview mode<br/>📝 Code editor with syntax<br/>🎨 Light/dark themes<br/>🔍 Zoom & pan controls<br/>📱 Mobile 2-row layout<br/>✨ Smooth animations"]
     
-    Export --> ExportFormats["📄 PDF export<br/>🖼️ PNG/SVG images<br/>🖨️ Print support<br/>📁 .mmd file format"]
+    Export --> ExportFormats["📄 PDF export<br/>🖼️ PNG/SVG images<br/>🖨️ Print support<br/>📁 .mmd file format<br/>📱 Mobile export buttons"]
     
     Features --> GetStarted[🎯 Get Started]
     GetStarted --> NewDiagram["➕ Click 'New Diagram' to create<br/>📝 Write Mermaid syntax in editor<br/>👁️ Toggle preview/code view"]
     
     GetStarted --> Tips[💡 Tips]
-    Tips --> TipsList["🖱️ Right-click to pan anytime<br/>⚡ Auto-save keeps your work safe<br/>📱 Works on all devices<br/>🎮 Use keyboard arrows to navigate"]
+    Tips --> TipsList["🖱️ Right-click to pan anytime<br/>⚡ Auto-save keeps your work safe<br/>📱 Works on all devices<br/>🎮 Use keyboard arrows to navigate<br/>✨ Smooth sidebar animations<br/>🔧 Mobile 2-row controls"]
     
     style Start fill:#4F46E5,stroke:#1E40AF,stroke-width:3px,color:#fff
     style Features fill:#7C3AED,stroke:#5B21B6,stroke-width:2px,color:#fff
