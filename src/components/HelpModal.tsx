@@ -1,4 +1,4 @@
-import { X, Keyboard, Copy, Save, Plus, Eye, XCircle, ZoomIn, ZoomOut, RotateCcw, Maximize } from 'lucide-react';
+import { X, Keyboard, Copy, Save, Plus, Eye, XCircle, ZoomIn, ZoomOut, RotateCcw, Maximize, Search } from 'lucide-react';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -12,6 +12,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
     {
       title: 'General',
       shortcuts: [
+        { key: 'Ctrl + K', action: 'Focus search', icon: Search },
         { key: 'Ctrl + C', action: 'Copy diagram code', icon: Copy },
         { key: 'Ctrl + S', action: 'Save diagram', icon: Save },
         { key: 'Ctrl + M', action: 'Create new diagram', icon: Plus },
@@ -68,7 +69,10 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                         </div>
                         <div className="flex-shrink-0">
                           <kbd className="px-2 py-1 text-xs font-mono bg-gray-600 text-gray-200 rounded border border-gray-500">
-                            {shortcut.key}
+                            {shortcut.key === 'Ctrl + K' 
+                              ? (navigator.platform.includes('Mac') ? '⌘ + K' : 'Ctrl + K')
+                              : shortcut.key
+                            }
                           </kbd>
                         </div>
                       </div>

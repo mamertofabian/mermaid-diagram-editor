@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { Diagram, Collection } from '../services/DiagramStorage';
 import { Download, Upload, HelpCircle, Info, BookOpen, Plus, Search, ChevronDown, ChevronRight, X, Edit3, Trash2 } from 'lucide-react';
 import { diagramExportImport } from '../services/DiagramExportImport';
@@ -50,6 +50,7 @@ export default function DiagramList({
   onDeleteCollection
 }: DiagramListProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
 
@@ -57,28 +58,29 @@ export default function DiagramList({
   const { collectionsWithDiagrams, uncategorizedDiagrams } = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
     
-    // Filter collections by search
-    const filtered = collections.filter(collection =>
-      collection.name.toLowerCase().includes(searchLower) ||
-      collection.description?.toLowerCase().includes(searchLower)
-    );
-
-    // Get diagrams for collections (only visible if collection matches search or diagram matches search)
-    const collectionsWithDiagrams = filtered.map(collection => {
+    // Get all collections that either match the search or contain diagrams that match the search
+    const collectionsWithDiagrams = collections.map(collection => {
       const collectionDiagrams = collection.diagramIds
         .map(id => diagrams.find(d => d.id === id))
-        .filter(Boolean)
-        .filter(diagram => 
-          searchTerm === '' || 
-          diagram!.name.toLowerCase().includes(searchLower) ||
-          collection.name.toLowerCase().includes(searchLower)
-        ) as Diagram[];
+        .filter(Boolean) as Diagram[];
+
+      // Filter diagrams by search term
+      const matchingDiagrams = searchTerm === '' ? collectionDiagrams : collectionDiagrams.filter(diagram =>
+        diagram.name.toLowerCase().includes(searchLower)
+      );
+
+      // Include collection if it matches search or has matching diagrams
+      const shouldInclude = searchTerm === '' || 
+        collection.name.toLowerCase().includes(searchLower) ||
+        collection.description?.toLowerCase().includes(searchLower) ||
+        matchingDiagrams.length > 0;
 
       return {
         collection,
-        diagrams: collectionDiagrams
+        diagrams: shouldInclude ? matchingDiagrams : [],
+        shouldShow: shouldInclude
       };
-    }).filter(item => item.diagrams.length > 0 || item.collection.name.toLowerCase().includes(searchLower));
+    }).filter(item => item.shouldShow);
 
     // Get uncategorized diagrams (not in any collection)
     const uncategorized = diagrams.filter(diagram => 
@@ -91,6 +93,34 @@ export default function DiagramList({
       uncategorizedDiagrams: uncategorized
     };
   }, [diagrams, collections, searchTerm]);
+
+  // Auto-expand collections when searching
+  useEffect(() => {
+    if (searchTerm) {
+      const collectionsToExpand = new Set<string>();
+      collectionsWithDiagrams.forEach(({ collection, diagrams }) => {
+        if (diagrams.length > 0) {
+          collectionsToExpand.add(collection.id);
+        }
+      });
+      setExpandedCollections(collectionsToExpand);
+    } else {
+      setExpandedCollections(new Set());
+    }
+  }, [searchTerm, collectionsWithDiagrams]);
+
+  // Keyboard shortcut for search (Ctrl/Cmd + K)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Toggle collection expansion
   const toggleCollection = (collectionId: string) => {
@@ -139,53 +169,59 @@ export default function DiagramList({
   return (
     <div className="flex flex-col h-full">
       {/* Header with Search and Controls */}
-      <div className="flex-shrink-0 space-y-3 pb-3 border-b border-gray-600">
+      <div className="flex-shrink-0 space-y-2 sm:space-y-3 pb-2 sm:pb-3 border-b border-gray-600">
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Search diagrams and collections..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-8 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="w-full pl-10 pr-20 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200"
+              className="absolute right-16 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 rounded-full hover:bg-gray-600 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           )}
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 translate-y-[-15px]">
+            <kbd className="px-2 py-1 text-xs font-mono text-gray-400/70 bg-gray-800/30 border border-gray-600/30 rounded">
+              {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+K
+            </kbd>
+          </div>
         </div>
 
         {/* Import/Export Controls */}
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 sm:flex sm:flex-row gap-2">
           <button
             onClick={handleImportClick}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+            className="flex items-center justify-center gap-1 px-2 py-2 text-xs text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
             title="Import Diagrams"
           >
-            <Upload className="w-4 h-4" />
-            Import
+            <Upload className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Import</span>
           </button>
           <button
             onClick={handleExportAll}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+            className="flex items-center justify-center gap-1 px-2 py-2 text-xs text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Export All Diagrams"
             disabled={diagrams.length === 0}
           >
-            <Download className="w-4 h-4" />
-            Export All
+            <Download className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Export All</span>
           </button>
           <button
             onClick={onCreateCollection}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-purple-700 rounded-lg hover:bg-purple-600 transition-colors"
+            className="flex items-center justify-center gap-1 px-2 py-2 text-xs text-gray-300 hover:text-white bg-purple-700 rounded-lg hover:bg-purple-600 transition-colors"
             title="Create New Collection"
           >
-            <Plus className="w-4 h-4" />
-            Collection
+            <Plus className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Collection</span>
           </button>
           <input
             ref={fileInputRef}
@@ -199,7 +235,7 @@ export default function DiagramList({
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto min-h-0 py-2">
+      <div className="flex-1 overflow-y-auto min-h-0 py-2 custom-scrollbar">
         <div className="space-y-1">
           {/* Collections */}
           {collectionsWithDiagrams.map(({ collection, diagrams: collectionDiagrams }) => {
@@ -350,12 +386,14 @@ export default function DiagramList({
 
           {/* Uncategorized Diagrams */}
           {uncategorizedDiagrams.length > 0 && (
-            <div className="mt-4">
-              <div className="flex items-center gap-2 px-2 py-2 text-sm text-gray-400 border-b border-gray-600">
-                <span>Uncategorized</span>
-                <span className="text-xs">({uncategorizedDiagrams.length})</span>
+            <div className="border border-gray-600 rounded-lg">
+              <div className="flex items-center justify-between p-3 cursor-default">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-400">Uncategorized</span>
+                  <span className="text-xs text-gray-500">({uncategorizedDiagrams.length})</span>
+                </div>
               </div>
-              <div className="space-y-1 mt-2">
+              <div className="border-t border-gray-600">
                 {uncategorizedDiagrams.map((diagram) => {
                   const diagramCollections = (diagram.collectionIds || [])
                     .map(id => collections.find(c => c.id === id))
@@ -364,10 +402,10 @@ export default function DiagramList({
                   return (
                     <div
                       key={diagram.id}
-                      className={`p-3 rounded-lg transition-colors ${
+                      className={`border-b border-gray-600 last:border-b-0 p-3 transition-colors ${
                         diagram.id === currentDiagramId
-                          ? 'bg-blue-600 border-2 border-blue-400'
-                          : 'bg-gray-700 hover:bg-gray-600'
+                          ? 'bg-blue-600/20'
+                          : 'hover:bg-gray-700'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -375,10 +413,10 @@ export default function DiagramList({
                           className="flex-1 text-left"
                           onClick={() => onSelect(diagram)}
                         >
-                          <h3 className={`font-medium ${diagram.id === currentDiagramId ? 'text-white' : 'text-gray-100'}`}>
+                          <h4 className={`font-medium text-sm ${diagram.id === currentDiagramId ? 'text-blue-100' : 'text-gray-100'}`}>
                             {diagram.name}
-                          </h3>
-                          <p className={`text-sm ${diagram.id === currentDiagramId ? 'text-blue-100' : 'text-gray-400'}`}>
+                          </h4>
+                          <p className={`text-xs ${diagram.id === currentDiagramId ? 'text-blue-200' : 'text-gray-400'}`}>
                             Updated {new Date(diagram.updatedAt).toLocaleDateString()}
                           </p>
                         </button>
