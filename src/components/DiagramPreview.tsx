@@ -24,6 +24,14 @@ interface DiagramPreviewProps {
  * DiagramPreview component that renders Mermaid diagrams
  * Theme switching changes the container background color, not the diagram content
  * This ensures consistent diagram appearance while providing visual theme options
+ * 
+ * Enhanced Zoom Features:
+ * - Mobile devices: 0.1x to 10x zoom range
+ * - Desktop devices: 0.5x to 5x zoom range  
+ * - Dynamic zoom increments based on current zoom level
+ * - Keyboard shortcuts: +/- for zoom, 0 for reset, M for max zoom
+ * - Touch pinch-to-zoom support with enhanced limits
+ * - Visual feedback when maximum zoom is reached
  */
 export default function DiagramPreview({ code, diagramName, theme, onThemeChange, isFullScreen, onFullScreenChange, onAlert }: DiagramPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -295,11 +303,49 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
   };
 
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.1, 3));
+    // Dynamic zoom increments based on current level
+    const isMobile = window.innerWidth < 768;
+    let increment;
+    
+    if (zoomLevel < 1) {
+      increment = 0.1; // Fine control at low zoom
+    } else if (zoomLevel < 3) {
+      increment = 0.25; // Medium control
+    } else if (zoomLevel < 6) {
+      increment = 0.5; // Coarse control at high zoom
+    } else {
+      increment = 1; // Very coarse control at very high zoom
+    }
+    
+    // Mobile devices get more aggressive zooming
+    if (isMobile) {
+      increment *= 1.5;
+    }
+    
+    setZoomLevel(prev => Math.min(prev + increment, 10));
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.1, 0.5));
+    // Dynamic zoom increments based on current level
+    const isMobile = window.innerWidth < 768;
+    let increment;
+    
+    if (zoomLevel <= 1) {
+      increment = 0.1; // Fine control at low zoom
+    } else if (zoomLevel <= 3) {
+      increment = 0.25; // Medium control
+    } else if (zoomLevel <= 6) {
+      increment = 0.5; // Coarse control at high zoom
+    } else {
+      increment = 1; // Very coarse control at very high zoom
+    }
+    
+    // Mobile devices get more aggressive zooming
+    if (isMobile) {
+      increment *= 1.5;
+    }
+    
+    setZoomLevel(prev => Math.max(prev - increment, 0.1));
   };
 
   const handleResetZoom = () => {
@@ -332,8 +378,13 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       // Also add some padding (90% of available space)
       const optimalScale = Math.min(scaleX, scaleY) * 0.9;
       
+      // Allow much higher zoom levels for mobile devices
+      const isMobile = window.innerWidth < 768;
+      const minZoom = isMobile ? 0.1 : 0.5;
+      const maxZoom = isMobile ? 10 : 5;
+      
       // Respect zoom limits
-      const finalScale = Math.max(0.5, Math.min(3, optimalScale));
+      const finalScale = Math.max(minZoom, Math.min(maxZoom, optimalScale));
       
       // Apply the zoom and center the diagram
       setZoomLevel(finalScale);
@@ -343,6 +394,13 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       // Fallback to reset zoom if calculation fails
       handleResetZoom();
     }
+  };
+
+  const handleMaxZoom = () => {
+    // Zoom to maximum level for detailed viewing
+    const isMobile = window.innerWidth < 768;
+    const maxZoom = isMobile ? 10 : 5;
+    setZoomLevel(maxZoom);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -410,6 +468,24 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
         e.preventDefault();
         setScrollPosition(prev => ({ ...prev, x: prev.x - panStep }));
         break;
+      case '0':
+        e.preventDefault();
+        handleResetZoom();
+        break;
+      case '=':
+      case '+':
+        e.preventDefault();
+        handleZoomIn();
+        break;
+      case '-':
+        e.preventDefault();
+        handleZoomOut();
+        break;
+      case 'm':
+      case 'M':
+        e.preventDefault();
+        handleMaxZoom();
+        break;
     }
   };
 
@@ -421,7 +497,10 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       e.preventDefault();
       const zoomSensitivity = 0.001;
       const delta = -e.deltaY * zoomSensitivity;
-      setZoomLevel(prev => Math.max(0.5, Math.min(3, prev + delta)));
+      const isMobile = window.innerWidth < 768;
+      const minZoom = isMobile ? 0.1 : 0.5;
+      const maxZoom = isMobile ? 10 : 5;
+      setZoomLevel(prev => Math.max(minZoom, Math.min(maxZoom, prev + delta)));
     };
 
     const touchStartHandler = (e: TouchEvent) => {
@@ -448,7 +527,10 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
         const currentDistance = getTouchDistance(e.touches);
         const scale = currentDistance / lastTouchDistance;
         const newZoom = zoomLevel * scale;
-        const clampedZoom = Math.max(0.5, Math.min(3, newZoom));
+        const isMobile = window.innerWidth < 768;
+        const minZoom = isMobile ? 0.1 : 0.5;
+        const maxZoom = isMobile ? 10 : 5;
+        const clampedZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
         
         setZoomLevel(clampedZoom);
         setLastTouchDistance(currentDistance);
@@ -504,6 +586,8 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
           onZoomOut={handleZoomOut}
           onResetZoom={handleResetZoom}
           onAutoFit={handleAutoFit}
+          onMaxZoom={handleMaxZoom}
+          zoomLevel={zoomLevel}
         />
         
         <FullScreenToggle
@@ -529,6 +613,8 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
               onZoomOut={handleZoomOut}
               onResetZoom={handleResetZoom}
               onAutoFit={handleAutoFit}
+              onMaxZoom={handleMaxZoom}
+              zoomLevel={zoomLevel}
             />
             
             <FullScreenToggle
