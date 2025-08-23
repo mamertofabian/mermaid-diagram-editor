@@ -4,7 +4,7 @@ A modern, feature-rich web-based editor for creating and managing Mermaid diagra
 
 ## 🚀 Live Demo
 
-**Try it now:** [mermaid-diagram.netlify.app](https://mermaid-diagram.netlify.app/)
+**Try it now:** [mermaid.codefrost.dev](https://mermaid.codefrost.dev/)
 
 ![Mermaid Diagram Editor Screenshot](https://via.placeholder.com/800x400/1f2937/ffffff?text=Mermaid+Diagram+Editor)
 
@@ -164,7 +164,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 <div align="center">
 
-**🚀 [Try the Live Demo](https://mermaid-diagram.netlify.app/) | 💻 [View Source](https://github.com/mamertofabian/mermaid-diagram-editor) | 📅 [Book Consultation](https://calendly.com/mamerto/30min)**
+**🚀 [Try the Live Demo](https://mermaid.codefrost.dev/) | 💻 [View Source](https://github.com/mamertofabian/mermaid-diagram-editor) | 📅 [Book Consultation](https://calendly.com/mamerto/30min)**
 
 *Built with ❤️ by [Mamerto Fabian](https://mamerto.codefrost.dev) at [Codefrost](https://codefrost.dev)*
 

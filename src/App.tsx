@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Code, Eye, List, FolderPlus, Copy, Check, FileText, HelpCircle } from 'lucide-react';
+import { Code, Eye, List, FolderPlus, Copy, Check, FileText, HelpCircle, Folder, FileImage } from 'lucide-react';
 import CreateDiagramModal from './components/CreateDiagramModal';
 import TemplatesModal from './components/TemplatesModal';
 import HelpModal from './components/HelpModal';
 import AlertModal from './components/AlertModal';
 import ConfirmModal from './components/ConfirmModal';
 import PromptModal from './components/PromptModal';
-import { diagramStorage, type Diagram } from './services/DiagramStorage';
+import CollectionModal from './components/CollectionModal';
+import CollectionManager from './components/CollectionManager';
+import { diagramStorage, collectionStorage, type Diagram, type Collection } from './services/DiagramStorage';
 import { diagramExportImport } from './services/DiagramExportImport';
 import { isMermaidDiagram, generateDiagramName } from './utils/mermaidDetector';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -19,15 +21,19 @@ import DiagramList from './components/DiagramList';
 
 function App() {
   const [diagrams, setDiagrams] = useState<Diagram[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [currentDiagram, setCurrentDiagram] = useState<Diagram>(WELCOME_DIAGRAM);
   const [isPreview, setIsPreview] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [sidebarView, setSidebarView] = useState<'diagrams' | 'collections'>('diagrams');
   const [copySuccess, setCopySuccess] = useState(false);
 
   // Modal states
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
     message: string;
@@ -57,9 +63,14 @@ function App() {
     // Add theme property to existing diagrams for backward compatibility
     const diagramsWithTheme = stored.map(diagram => ({
       ...diagram,
-      theme: diagram.theme || 'light'
+      theme: diagram.theme || 'light',
+      collectionIds: diagram.collectionIds || []
     }));
     setDiagrams(diagramsWithTheme);
+
+    // Load collections
+    const storedCollections = collectionStorage.getAllCollections();
+    setCollections(storedCollections);
 
     // Check for shared diagram in URL first
     const sharedDiagram = diagramExportImport.importFromURL();
@@ -320,6 +331,148 @@ function App() {
     }
   };
 
+  // Collection management functions
+  const handleCreateCollection = () => {
+    setEditingCollection(null);
+    setShowCollectionModal(true);
+  };
+
+  const handleEditCollection = (collection: Collection) => {
+    setEditingCollection(collection);
+    setShowCollectionModal(true);
+  };
+
+  const handleCollectionModalConfirm = (data: { name: string; description?: string; color?: string; icon?: string }) => {
+    if (editingCollection) {
+      // Update existing collection
+      const updated = collectionStorage.updateCollection(editingCollection.id, data);
+      setCollections(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setAlertModal({
+        isOpen: true,
+        message: `Collection "${updated.name}" has been updated successfully!`,
+        title: 'Collection Updated',
+        type: 'success'
+      });
+    } else {
+      // Create new collection
+      const newCollection = collectionStorage.saveCollection(data.name, data.description, data.color, data.icon);
+      setCollections(prev => [...prev, newCollection]);
+      setAlertModal({
+        isOpen: true,
+        message: `Collection "${newCollection.name}" has been created successfully!`,
+        title: 'Collection Created',
+        type: 'success'
+      });
+    }
+  };
+
+  const handleDeleteCollection = (collection: Collection) => {
+    collectionStorage.deleteCollection(collection.id);
+    setCollections(prev => prev.filter(c => c.id !== collection.id));
+    
+    // Update diagrams to remove collection references
+    const updatedDiagrams = diagrams.map(diagram => {
+      if (diagram.collectionIds?.includes(collection.id)) {
+        const updatedCollectionIds = diagram.collectionIds.filter(id => id !== collection.id);
+        const updated = diagramStorage.updateDiagram(diagram.id, { collectionIds: updatedCollectionIds });
+        return updated;
+      }
+      return diagram;
+    });
+    setDiagrams(updatedDiagrams);
+    
+    setAlertModal({
+      isOpen: true,
+      message: `Collection "${collection.name}" has been deleted successfully!`,
+      title: 'Collection Deleted',
+      type: 'success'
+    });
+  };
+
+  const handleAddDiagramToCollection = (diagramId: string, collectionId: string) => {
+    try {
+      collectionStorage.addDiagramToCollection(collectionId, diagramId);
+      
+      // Update local state
+      setCollections(prev => prev.map(collection => {
+        if (collection.id === collectionId && !collection.diagramIds.includes(diagramId)) {
+          return { ...collection, diagramIds: [...collection.diagramIds, diagramId] };
+        }
+        return collection;
+      }));
+      
+      setDiagrams(prev => prev.map(diagram => {
+        if (diagram.id === diagramId) {
+          const collectionIds = diagram.collectionIds || [];
+          if (!collectionIds.includes(collectionId)) {
+            const updated = diagramStorage.updateDiagram(diagramId, { 
+              collectionIds: [...collectionIds, collectionId] 
+            });
+            return updated;
+          }
+        }
+        return diagram;
+      }));
+
+      const collection = collections.find(c => c.id === collectionId);
+      if (collection) {
+        setAlertModal({
+          isOpen: true,
+          message: `Diagram added to "${collection.name}" collection!`,
+          title: 'Added to Collection',
+          type: 'success'
+        });
+      }
+    } catch {
+      setAlertModal({
+        isOpen: true,
+        message: 'Failed to add diagram to collection. Please try again.',
+        title: 'Error',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleRemoveDiagramFromCollection = (diagramId: string, collectionId: string) => {
+    try {
+      collectionStorage.removeDiagramFromCollection(collectionId, diagramId);
+      
+      // Update local state
+      setCollections(prev => prev.map(collection => {
+        if (collection.id === collectionId) {
+          return { ...collection, diagramIds: collection.diagramIds.filter(id => id !== diagramId) };
+        }
+        return collection;
+      }));
+      
+      setDiagrams(prev => prev.map(diagram => {
+        if (diagram.id === diagramId && diagram.collectionIds?.includes(collectionId)) {
+          const collectionIds = diagram.collectionIds.filter(id => id !== collectionId);
+          const updated = diagramStorage.updateDiagram(diagramId, { collectionIds });
+          return updated;
+        }
+        return diagram;
+      }));
+
+      const collection = collections.find(c => c.id === collectionId);
+      if (collection) {
+        setAlertModal({
+          isOpen: true,
+          message: `Diagram removed from "${collection.name}" collection!`,
+          title: 'Removed from Collection',
+          type: 'success'
+        });
+      }
+    } catch {
+      setAlertModal({
+        isOpen: true,
+        message: 'Failed to remove diagram from collection. Please try again.',
+        title: 'Error',
+        type: 'error'
+      });
+    }
+  };
+
   // Paste functionality for creating diagrams from clipboard (only in Preview mode)
   const handlePaste = useCallback(async (e: ClipboardEvent) => {
     // Only handle paste for diagram creation when in Preview mode
@@ -372,11 +525,13 @@ function App() {
       setShowTemplatesModal(false);
     } else if (showHelpModal) {
       setShowHelpModal(false);
+    } else if (showCollectionModal) {
+      setShowCollectionModal(false);
     }
   };
 
   // Check if any modal is open
-  const isModalOpen = alertModal.isOpen || confirmModal.isOpen || promptModal.isOpen || showCreateModal || showTemplatesModal || showHelpModal;
+  const isModalOpen = alertModal.isOpen || confirmModal.isOpen || promptModal.isOpen || showCreateModal || showTemplatesModal || showHelpModal || showCollectionModal;
 
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
@@ -386,6 +541,9 @@ function App() {
     onToggleView: toggleView,
     onEscape: handleEscape,
     onHelp: useCallback(() => setShowHelpModal(true), []),
+    onNewCollection: handleCreateCollection,
+    onSwitchToDiagrams: () => setSidebarView('diagrams'),
+    onSwitchToCollections: () => setSidebarView('collections'),
     isModalOpen,
     isPreview
   });
@@ -415,43 +573,89 @@ function App() {
               flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]
               transform transition-all duration-500 ease-out md:transform-none md:opacity-100
             `}>
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold">My Diagrams</h2>
-            </div>
-            <div className="flex gap-2 mb-4">
+            {/* Sidebar Tabs */}
+            <div className="flex bg-gray-700 rounded-lg mb-3">
               <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors flex-1"
-                title="Create New Diagram"
+                onClick={() => setSidebarView('diagrams')}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors flex-1 justify-center ${
+                  sidebarView === 'diagrams'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-600'
+                }`}
               >
-                <FolderPlus className="w-4 h-4" />
-                <span className="text-sm font-medium">New</span>
+                <FileImage className="w-4 h-4" />
+                Diagrams
               </button>
               <button
-                onClick={() => setShowTemplatesModal(true)}
-                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-blue-700 rounded-lg hover:bg-blue-600 transition-colors flex-1"
-                title="Use Template"
+                onClick={() => setSidebarView('collections')}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors flex-1 justify-center ${
+                  sidebarView === 'collections'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-600'
+                }`}
               >
-                <FileText className="w-4 h-4" />
-                <span className="text-sm font-medium">Templates</span>
+                <Folder className="w-4 h-4" />
+                Collections
               </button>
             </div>
-            <div className="flex-1 min-h-0">
-              <DiagramList
-                diagrams={diagrams}
-                currentDiagramId={currentDiagram.id}
-                isWelcomeActive={currentDiagram.id === WELCOME_DIAGRAM.id}
-                isTutorialActive={currentDiagram.id === TUTORIAL_DIAGRAM.id}
-                onSelect={setCurrentDiagram}
-                onDelete={handleDelete}
-                onRename={handleRename}
-                onImport={handleImport}
-                onExportSingle={handleExportSingle}
-                onShare={handleShare}
-                onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
-                onShowTutorial={() => setCurrentDiagram(TUTORIAL_DIAGRAM)}
-              />
-            </div>
+
+            {sidebarView === 'diagrams' ? (
+              <>
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-lg font-semibold">My Diagrams</h2>
+                </div>
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors flex-1"
+                    title="Create New Diagram"
+                  >
+                    <FolderPlus className="w-4 h-4" />
+                    <span className="text-sm font-medium">New</span>
+                  </button>
+                  <button
+                    onClick={() => setShowTemplatesModal(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-blue-700 rounded-lg hover:bg-blue-600 transition-colors flex-1"
+                    title="Use Template"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span className="text-sm font-medium">Templates</span>
+                  </button>
+                </div>
+                <div className="flex-1 min-h-0">
+                  <DiagramList
+                    diagrams={diagrams}
+                    collections={collections}
+                    currentDiagramId={currentDiagram.id}
+                    isWelcomeActive={currentDiagram.id === WELCOME_DIAGRAM.id}
+                    isTutorialActive={currentDiagram.id === TUTORIAL_DIAGRAM.id}
+                    onSelect={setCurrentDiagram}
+                    onDelete={handleDelete}
+                    onRename={handleRename}
+                    onImport={handleImport}
+                    onExportSingle={handleExportSingle}
+                    onShare={handleShare}
+                    onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
+                    onShowTutorial={() => setCurrentDiagram(TUTORIAL_DIAGRAM)}
+                    onAddToCollection={handleAddDiagramToCollection}
+                    onRemoveFromCollection={handleRemoveDiagramFromCollection}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 min-h-0">
+                <CollectionManager
+                  collections={collections}
+                  diagrams={diagrams}
+                  currentDiagramId={currentDiagram.id}
+                  onCreateCollection={handleCreateCollection}
+                  onEditCollection={handleEditCollection}
+                  onDeleteCollection={handleDeleteCollection}
+                  onSelectDiagram={setCurrentDiagram}
+                  onRemoveDiagramFromCollection={handleRemoveDiagramFromCollection}
+                />
+              </div>
+            )}
             </div>
           </>
         )}
@@ -563,6 +767,13 @@ function App() {
       <HelpModal
         isOpen={showHelpModal}
         onClose={() => setShowHelpModal(false)}
+      />
+      
+      <CollectionModal
+        isOpen={showCollectionModal}
+        onClose={() => setShowCollectionModal(false)}
+        onConfirm={handleCollectionModalConfirm}
+        collection={editingCollection}
       />
 
       {/* Custom Modals */}
