@@ -10,43 +10,11 @@ import { diagramExportImport } from './services/DiagramExportImport';
 import { isMermaidDiagram, generateDiagramName } from './utils/mermaidDetector';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { type DiagramTemplate } from './data/templates';
+import { WELCOME_DIAGRAM, TUTORIAL_DIAGRAM } from './data/defaultDiagrams';
 import Editor from './components/Editor';
 import DiagramPreview from './components/DiagramPreview';
 import DiagramList from './components/DiagramList';
 
-const WELCOME_DIAGRAM = {
-  id: 'welcome',
-  name: '🎉 Welcome to Mermaid Diagram Editor',
-  code: `flowchart TD
-    Start([🚀 Welcome to Mermaid Editor]) --> Features[✨ Key Features]
-    
-    Features --> Import[📁 Import & Export]
-    Features --> Share[🔗 Share Diagrams]
-    Features --> Editor[✏️ Live Editor]
-    Features --> Export[💾 Export Options]
-    
-    Import --> ImportFiles["📄 Drag & drop .mmd/.json files<br/>🔄 Import button for file selection<br/>📋 Export all diagrams as backup"]
-    
-    Share --> ShareOptions["🔗 Generate shareable URLs<br/>📋 Copy links to clipboard<br/>🌐 Open shared diagrams instantly"]
-    
-    Editor --> EditorFeatures["👁️ Live preview mode<br/>📝 Code editor with syntax<br/>🎨 Light/dark themes<br/>🔍 Zoom & pan controls<br/>📱 Mobile 2-row layout<br/>✨ Smooth animations"]
-    
-    Export --> ExportFormats["📄 PDF export<br/>🖼️ PNG/SVG images<br/>🖨️ Print support<br/>📁 .mmd file format<br/>📱 Mobile export buttons"]
-    
-    Features --> GetStarted[🎯 Get Started]
-    GetStarted --> NewDiagram["➕ Click 'New Diagram' to create<br/>📝 Write Mermaid syntax in editor<br/>👁️ Toggle preview/code view"]
-    
-    GetStarted --> Tips[💡 Tips]
-    Tips --> TipsList["🖱️ Right-click to pan anytime<br/>⚡ Auto-save keeps your work safe<br/>📱 Works on all devices<br/>🎮 Use keyboard arrows to navigate<br/>✨ Smooth sidebar animations<br/>🔧 Mobile 2-row controls"]
-    
-    style Start fill:#4F46E5,stroke:#1E40AF,stroke-width:3px,color:#fff
-    style Features fill:#7C3AED,stroke:#5B21B6,stroke-width:2px,color:#fff
-    style GetStarted fill:#059669,stroke:#047857,stroke-width:2px,color:#fff
-    style Tips fill:#DC2626,stroke:#B91C1C,stroke-width:2px,color:#fff`,
-  theme: 'dark' as const,
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-};
 
 function App() {
   const [diagrams, setDiagrams] = useState<Diagram[]>([]);
@@ -153,12 +121,12 @@ function App() {
   };
 
   const handleSave = () => {
-    // Don't save welcome diagram
-    if (currentDiagram.id === 'welcome') {
+    // Don't save welcome or tutorial diagrams
+    if (currentDiagram.id === 'welcome' || currentDiagram.id === 'tutorial') {
       setAlertModal({
         isOpen: true,
         message: 'To save changes, please create a new diagram first using the "New Diagram" button.',
-        title: 'Save Welcome Guide',
+        title: currentDiagram.id === 'welcome' ? 'Save Welcome Guide' : 'Save Tutorial',
         type: 'info'
       });
       return;
@@ -216,18 +184,20 @@ function App() {
   const handleCodeChange = (code: string) => {
     setCurrentDiagram(prev => ({ ...prev, code }));
     
-    // Save changes to storage immediately
-    const updated = diagramStorage.updateDiagram(currentDiagram.id, {
-      code: code
-    });
-    setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
+    // Save changes to storage immediately (except for welcome and tutorial diagrams)
+    if (currentDiagram.id !== 'welcome' && currentDiagram.id !== 'tutorial') {
+      const updated = diagramStorage.updateDiagram(currentDiagram.id, {
+        code: code
+      });
+      setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
+    }
   };
 
   const handleThemeChange = (theme: 'light' | 'dark') => {
     setCurrentDiagram(prev => ({ ...prev, theme }));
     
-    // Only save theme change to storage if it's a saved diagram (not welcome)
-    if (currentDiagram.id !== 'welcome') {
+    // Only save theme change to storage if it's a saved diagram (not welcome or tutorial)
+    if (currentDiagram.id !== 'welcome' && currentDiagram.id !== 'tutorial') {
       const updated = diagramStorage.updateDiagram(currentDiagram.id, {
         theme: theme
       });
@@ -471,6 +441,7 @@ function App() {
                 onExportSingle={handleExportSingle}
                 onShare={handleShare}
                 onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
+                onShowTutorial={() => setCurrentDiagram(TUTORIAL_DIAGRAM)}
               />
             </div>
             </div>

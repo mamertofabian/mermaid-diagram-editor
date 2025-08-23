@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Diagram } from '../services/DiagramStorage';
-import { Pencil, Trash2, Download, Upload, Share, FileDown, HelpCircle, Info, ExternalLink, Calendar, Youtube, Github } from 'lucide-react';
+import { Pencil, Trash2, Download, Upload, Share, FileDown, HelpCircle, Info, ExternalLink, Calendar, Youtube, Github, BookOpen } from 'lucide-react';
 import { diagramExportImport } from '../services/DiagramExportImport';
 
 interface DiagramListProps {
@@ -12,9 +12,10 @@ interface DiagramListProps {
   onExportSingle: (diagram: Diagram) => void;
   onShare: (diagram: Diagram) => void;
   onShowWelcome: () => void;
+  onShowTutorial: () => void;
 }
 
-export default function DiagramList({ diagrams, onSelect, onDelete, onRename, onImport, onExportSingle, onShare, onShowWelcome }: DiagramListProps) {
+export default function DiagramList({ diagrams, onSelect, onDelete, onRename, onImport, onExportSingle, onShare, onShowWelcome, onShowTutorial }: DiagramListProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportAll = () => {
@@ -140,8 +141,8 @@ export default function DiagramList({ diagrams, onSelect, onDelete, onRename, on
         </div>
       </div>
       
-      {/* Welcome Guide Button - Fixed at bottom */}
-      <div className="mt-4 pt-3 border-t border-gray-600 flex-shrink-0">
+      {/* Guide Buttons - Fixed at bottom */}
+      <div className="mt-4 pt-3 border-t border-gray-600 flex-shrink-0 space-y-2">
         <button
           onClick={onShowWelcome}
           className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-gray-200 hover:bg-gray-600 rounded-lg transition-colors"
@@ -149,6 +150,15 @@ export default function DiagramList({ diagrams, onSelect, onDelete, onRename, on
         >
           <HelpCircle className="w-4 h-4" />
           <span className="text-sm">Show Welcome Guide</span>
+        </button>
+        
+        <button
+          onClick={onShowTutorial}
+          className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-gray-200 hover:bg-gray-600 rounded-lg transition-colors"
+          title="Show Mermaid Tutorial"
+        >
+          <BookOpen className="w-4 h-4" />
+          <span className="text-sm">Mermaid Tutorial</span>
         </button>
       </div>
 
