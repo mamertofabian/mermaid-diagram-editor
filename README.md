@@ -39,6 +39,13 @@ A modern, feature-rich web-based editor for creating and managing Mermaid diagra
 - 🔄 **Persistent state** - Remembers your preferences and diagrams
 - 🌐 **No login required** - Works completely offline after first load
 
+### 🗂️ **Collections & Organization**
+- 📁 **Collection management** - Create, edit, and delete collections
+- 🎨 **Customizable collections** - Choose colors and icons for visual organization
+- 🖱️ **Drag & drop organization** - Simply drag diagrams to collections
+- 🔗 **Multi-collection support** - Diagrams can belong to multiple collections
+- 🏷️ **Visual collection badges** - See which collections a diagram belongs to
+
 ## Getting Started
 
 ### Prerequisites
@@ -91,6 +98,14 @@ The application will be available at `http://localhost:5173`
 - **Export All**: Backup all diagrams as JSON file
 - **Print**: Use Ctrl+P for clean, diagram-only printing
 - **Multi-format**: Export as PDF, PNG, or SVG
+
+### 🗂️ **Collections & Organization**
+- **Create Collections**: Click the "Collection" button to create new collections
+- **Customize**: Choose colors and icons for each collection
+- **Drag & Drop**: Simply drag any diagram to a collection header to add it
+- **Multi-collection**: Diagrams can belong to multiple collections
+- **Visual Feedback**: Clear indicators show valid drop zones and prevent duplicate additions
+- **Manage**: Edit or delete collections using the buttons in each collection header
 
 ## 🛠️ Built With
 

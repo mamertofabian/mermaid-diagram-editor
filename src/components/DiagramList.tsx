@@ -53,6 +53,14 @@ export default function DiagramList({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
+  
+  // Drag and drop state
+  const [draggedDiagram, setDraggedDiagram] = useState<Diagram | null>(null);
+  const [dragOverCollection, setDragOverCollection] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDragOverUncategorized, setIsDragOverUncategorized] = useState(false);
+
+
 
   // Group diagrams by collections and uncategorized
   const { collectionsWithDiagrams, uncategorizedDiagrams } = useMemo(() => {
@@ -133,6 +141,129 @@ export default function DiagramList({
     setExpandedCollections(newExpanded);
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, diagram: Diagram) => {
+    // Set data transfer
+    e.dataTransfer.setData('text/plain', diagram.id);
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Set state
+    setDraggedDiagram(diagram);
+    setIsDragging(true);
+    
+    // Create drag preview with diagram name
+    const dragPreview = document.createElement('div');
+    dragPreview.style.cssText = `
+      position: absolute;
+      top: -1000px;
+      left: -1000px;
+      background: #3B82F6;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      pointer-events: none;
+      z-index: 1000;
+    `;
+    dragPreview.textContent = diagram.name;
+    document.body.appendChild(dragPreview);
+    
+    e.dataTransfer.setDragImage(dragPreview, 60, 20);
+    
+    // Clean up after a short delay
+    setTimeout(() => {
+      if (document.body.contains(dragPreview)) {
+        document.body.removeChild(dragPreview);
+      }
+    }, 1);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedDiagram(null);
+    setIsDragging(false);
+    setDragOverCollection(null);
+    setIsDragOverUncategorized(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent, collectionId?: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (collectionId && draggedDiagram) {
+      // Check if this would be a valid drop
+      const isAlreadyInCollection = draggedDiagram.collectionIds?.includes(collectionId);
+      const isValidDrop = !isAlreadyInCollection;
+      
+      // Auto-expand the collection when dragging over it
+      if (!expandedCollections.has(collectionId)) {
+        setExpandedCollections(prev => new Set([...prev, collectionId]));
+      }
+      
+      e.dataTransfer.dropEffect = isValidDrop ? 'move' : 'none';
+      setDragOverCollection(collectionId);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, collectionId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Try to get diagram ID from state first, then from data transfer
+    const diagramId = draggedDiagram?.id || e.dataTransfer.getData('text/plain');
+    
+    if (diagramId) {
+      // Find the diagram to check if it's already in this collection
+      const diagram = diagrams.find(d => d.id === diagramId);
+      
+      if (diagram) {
+        const isAlreadyInCollection = diagram.collectionIds?.includes(collectionId);
+        
+        if (!isAlreadyInCollection) {
+          onAddToCollection(diagramId, collectionId);
+        }
+      }
+    }
+    
+    setDraggedDiagram(null);
+    setIsDragging(false);
+    setDragOverCollection(null);
+    setIsDragOverUncategorized(false);
+  };
+
+  const handleUncategorizedDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (draggedDiagram && draggedDiagram.collectionIds && draggedDiagram.collectionIds.length > 0) {
+      setIsDragOverUncategorized(true);
+    }
+  };
+
+  const handleUncategorizedDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const diagramId = draggedDiagram?.id || e.dataTransfer.getData('text/plain');
+    
+    if (diagramId && draggedDiagram) {
+      // Remove diagram from all collections
+      if (draggedDiagram.collectionIds && draggedDiagram.collectionIds.length > 0) {
+        draggedDiagram.collectionIds.forEach(collectionId => {
+          onRemoveFromCollection(diagramId, collectionId);
+        });
+      }
+    }
+    
+    setDraggedDiagram(null);
+    setIsDragging(false);
+    setDragOverCollection(null);
+    setIsDragOverUncategorized(false);
+  };
+
   const handleExportAll = () => {
     diagramExportImport.exportAllAsJSON(diagrams);
   };
@@ -196,6 +327,13 @@ export default function DiagramList({
           </div>
         </div>
 
+        {/* Drag and Drop Instructions */}
+        <div className="text-center">
+          <p className="text-xs text-gray-400">
+            💡 <span className="font-medium">Tip:</span> Drag diagrams to collections to organize them
+          </p>
+        </div>
+
         {/* Import/Export Controls */}
         <div className="grid grid-cols-3 sm:flex sm:flex-row gap-2">
           <button
@@ -243,16 +381,50 @@ export default function DiagramList({
             const iconName = (collection.icon?.split('-').map(word => 
               word.charAt(0).toUpperCase() + word.slice(1)).join('') || 'Folder') as keyof typeof LucideIcons;
             const IconComponent = (LucideIcons[iconName] || LucideIcons.Folder) as React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+            const isDragOver = dragOverCollection === collection.id;
+            const isDraggingFromThisCollection = draggedDiagram && draggedDiagram.collectionIds?.includes(collection.id);
+            const isValidDrop = isDragOver && !isDraggingFromThisCollection && draggedDiagram && 
+              !draggedDiagram.collectionIds?.includes(collection.id);
 
             return (
-              <div key={collection.id} className="border border-gray-600 rounded-lg">
-                {/* Collection Header */}
+              <div 
+                key={collection.id} 
+                className="border border-gray-600 rounded-lg transition-all duration-200"
+              >
+                {/* Collection Header - Now the main drop zone */}
                 <div
-                  className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-700 transition-colors"
+                  className={`flex items-center justify-between p-3 cursor-pointer transition-colors ${
+                    isValidDrop 
+                      ? 'bg-blue-600/20 border-2 border-blue-400' 
+                      : isDragOver && !isDraggingFromThisCollection && draggedDiagram?.collectionIds?.includes(collection.id)
+                      ? 'bg-red-600/20 border-2 border-red-400'
+                      : 'hover:bg-gray-700'
+                  }`}
                   onClick={() => toggleCollection(collection.id)}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDragOver={(e) => {
+                    handleDragOver(e, collection.id);
+                  }}
+                  onDragLeave={(e) => {
+                    e.stopPropagation();
+                    // Only clear drag over if we're actually leaving the collection header
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    
+                    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                      setDragOverCollection(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    handleDrop(e, collection.id);
+                  }}
                 >
-                  <div className="flex items-center gap-3">
-                    <button className="text-gray-400">
+                  <div className={`flex items-center gap-3 ${isDragging ? 'pointer-events-none' : ''}`}>
+                    <button className={`text-gray-400 ${isDragging ? 'pointer-events-none' : ''}`}>
                       {isExpanded ? (
                         <ChevronDown className="w-4 h-4" />
                       ) : (
@@ -261,7 +433,7 @@ export default function DiagramList({
                     </button>
                     
                     <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDragging ? 'pointer-events-none' : ''}`}
                       style={{ 
                         backgroundColor: collection.color + '20',
                         border: `1px solid ${collection.color}40`
@@ -273,7 +445,7 @@ export default function DiagramList({
                       />
                     </div>
                     
-                    <div>
+                    <div className={isDragging ? 'pointer-events-none' : ''}>
                       <h3 className="font-medium text-gray-100">{collection.name}</h3>
                       <p className="text-sm text-gray-400">
                         {collectionDiagrams.length} diagram{collectionDiagrams.length !== 1 ? 's' : ''}
@@ -281,7 +453,7 @@ export default function DiagramList({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-2 ${isDragging ? 'pointer-events-none' : ''}`}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -305,6 +477,24 @@ export default function DiagramList({
                   </div>
                 </div>
 
+                {/* Drop zone indicator when dragging over collection */}
+                {isDragOver && !isDraggingFromThisCollection && (
+                  <div className={`px-3 py-2 border-t text-center ${
+                    isValidDrop 
+                      ? 'bg-blue-600/20 border-blue-400/30' 
+                      : 'bg-red-600/20 border-red-400/30'
+                  }`}>
+                    <p className={`text-sm font-medium ${
+                      isValidDrop ? 'text-blue-200' : 'text-red-200'
+                    }`}>
+                      {isValidDrop 
+                        ? `Drop here to add to "${collection.name}"`
+                        : `Already in "${collection.name}"`
+                      }
+                    </p>
+                  </div>
+                )}
+
                 {/* Expanded Collection Content */}
                 {isExpanded && (
                   <div className="border-t border-gray-600">
@@ -315,20 +505,31 @@ export default function DiagramList({
                         const diagramCollections = (diagram.collectionIds || [])
                           .map(id => collections.find(c => c.id === id))
                           .filter(Boolean) as Collection[];
+                        const isBeingDragged = draggedDiagram?.id === diagram.id;
 
                         return (
                           <div
                             key={diagram.id}
-                            className={`border-b border-gray-600 last:border-b-0 p-3 transition-colors ${
+                            draggable={true}
+                            onDragStart={(e) => handleDragStart(e, diagram)}
+                            onDragEnd={handleDragEnd}
+                            className={`border-b border-gray-600 last:border-b-0 p-3 transition-all duration-200 ${
                               diagram.id === currentDiagramId
                                 ? 'bg-blue-600/20'
+                                : isBeingDragged
+                                ? 'opacity-50 bg-gray-800'
                                 : 'hover:bg-gray-700'
-                            }`}
+                            } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                           >
                             <div className="flex items-center justify-between">
                               <button
                                 className="flex-1 text-left"
-                                onClick={() => onSelect(diagram)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onSelect(diagram);
+                                }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={(e) => e.stopPropagation()}
                               >
                                 <h4 className={`font-medium text-sm ${diagram.id === currentDiagramId ? 'text-blue-100' : 'text-gray-100'}`}>
                                   {diagram.name}
@@ -384,34 +585,71 @@ export default function DiagramList({
             );
           })}
 
-          {/* Uncategorized Diagrams */}
-          {uncategorizedDiagrams.length > 0 && (
-            <div className="border border-gray-600 rounded-lg">
+          {/* Uncategorized Diagrams - Show when there are uncategorized diagrams OR when dragging from collections */}
+          {(uncategorizedDiagrams.length > 0 || (isDragging && draggedDiagram && draggedDiagram.collectionIds && draggedDiagram.collectionIds.length > 0)) && (
+            <div 
+              className={`border border-gray-600 rounded-lg transition-all duration-200 ${
+                isDragOverUncategorized ? 'bg-blue-600/10 border-blue-400 border-2' : ''
+              }`}
+              onDragOver={handleUncategorizedDragOver}
+              onDragLeave={(e) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX;
+                const y = e.clientY;
+                
+                if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                  setIsDragOverUncategorized(false);
+                }
+              }}
+              onDrop={handleUncategorizedDrop}
+            >
               <div className="flex items-center justify-between p-3 cursor-default">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-400">Uncategorized</span>
                   <span className="text-xs text-gray-500">({uncategorizedDiagrams.length})</span>
                 </div>
               </div>
-              <div className="border-t border-gray-600">
-                {uncategorizedDiagrams.map((diagram) => {
+              
+              {/* Drop zone indicator when dragging over uncategorized */}
+              {isDragOverUncategorized && (
+                <div className="px-3 py-2 border-t bg-blue-600/20 border-blue-400/30">
+                  <p className="text-sm font-medium text-blue-200 text-center">
+                    Drop here to remove from collections
+                  </p>
+                </div>
+              )}
+              {uncategorizedDiagrams.length > 0 && (
+                <div className="border-t border-gray-600">
+                  {uncategorizedDiagrams.map((diagram) => {
                   const diagramCollections = (diagram.collectionIds || [])
                     .map(id => collections.find(c => c.id === id))
                     .filter(Boolean) as Collection[];
+                  const isBeingDragged = draggedDiagram?.id === diagram.id;
 
                   return (
                     <div
                       key={diagram.id}
-                      className={`border-b border-gray-600 last:border-b-0 p-3 transition-colors ${
+                      draggable={true}
+                      onDragStart={(e) => handleDragStart(e, diagram)}
+                      onDragEnd={handleDragEnd}
+                      className={`border-b border-gray-600 last:border-b-0 p-3 transition-all duration-200 ${
                         diagram.id === currentDiagramId
                           ? 'bg-blue-600/20'
+                          : isBeingDragged
+                          ? 'opacity-50 bg-gray-800'
                           : 'hover:bg-gray-700'
-                      }`}
+                      } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                     >
                       <div className="flex items-center justify-between">
                         <button
                           className="flex-1 text-left"
-                          onClick={() => onSelect(diagram)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelect(diagram);
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onDragStart={(e) => e.stopPropagation()}
                         >
                           <h4 className={`font-medium text-sm ${diagram.id === currentDiagramId ? 'text-blue-100' : 'text-gray-100'}`}>
                             {diagram.name}
@@ -455,8 +693,9 @@ export default function DiagramList({
                       )}
                     </div>
                   );
-                })}
-              </div>
+                  })}
+                </div>
+              )}
             </div>
           )}
 

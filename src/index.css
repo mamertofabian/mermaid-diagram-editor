@@ -95,4 +95,40 @@
     scrollbar-width: thin;
     scrollbar-color: rgb(75 85 99) transparent;
   }
+
+  /* Drag and drop utilities */
+  .cursor-grab {
+    cursor: grab;
+  }
+  
+  .cursor-grabbing {
+    cursor: grabbing;
+  }
+  
+  .cursor-no-drop {
+    cursor: no-drop;
+  }
+  
+  .cursor-copy {
+    cursor: copy;
+  }
+  
+  /* Drag and drop animations */
+  .drag-preview {
+    opacity: 0.8;
+    transform: rotate(5deg);
+    transition: all 0.2s ease;
+  }
+  
+  .drop-zone-active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border-color: rgb(59, 130, 246);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  
+  .drop-zone-invalid {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+    border-color: rgb(239, 68, 68);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
 }
