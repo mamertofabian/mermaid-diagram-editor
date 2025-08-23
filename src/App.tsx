@@ -434,6 +434,7 @@ function App() {
             <div className="flex-1 min-h-0">
               <DiagramList
                 diagrams={diagrams}
+                currentDiagramId={currentDiagram.id}
                 onSelect={setCurrentDiagram}
                 onDelete={handleDelete}
                 onRename={handleRename}

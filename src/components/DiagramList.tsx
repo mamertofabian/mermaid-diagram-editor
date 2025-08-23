@@ -5,6 +5,7 @@ import { diagramExportImport } from '../services/DiagramExportImport';
 
 interface DiagramListProps {
   diagrams: Diagram[];
+  currentDiagramId?: string;
   onSelect: (diagram: Diagram) => void;
   onDelete: (id: string) => void;
   onRename: (diagram: Diagram) => void;
@@ -15,7 +16,7 @@ interface DiagramListProps {
   onShowTutorial: () => void;
 }
 
-export default function DiagramList({ diagrams, onSelect, onDelete, onRename, onImport, onExportSingle, onShare, onShowWelcome, onShowTutorial }: DiagramListProps) {
+export default function DiagramList({ diagrams, currentDiagramId, onSelect, onDelete, onRename, onImport, onExportSingle, onShare, onShowWelcome, onShowTutorial }: DiagramListProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportAll = () => {
@@ -94,42 +95,64 @@ export default function DiagramList({ diagrams, onSelect, onDelete, onRename, on
             diagrams.map((diagram) => (
           <div
             key={diagram.id}
-            className="flex items-center justify-between p-3 bg-gray-700 rounded-lg shadow-sm hover:bg-gray-600 transition-colors"
+            className={`flex items-center justify-between p-3 rounded-lg shadow-sm transition-colors ${
+              diagram.id === currentDiagramId
+                ? 'bg-blue-600 border-2 border-blue-400'
+                : 'bg-gray-700 hover:bg-gray-600'
+            }`}
           >
             <button
               className="flex-1 text-left"
               onClick={() => onSelect(diagram)}
             >
-              <h3 className="font-medium text-gray-100">{diagram.name}</h3>
-              <p className="text-sm text-gray-400">
+              <h3 className={`font-medium ${diagram.id === currentDiagramId ? 'text-white' : 'text-gray-100'}`}>
+                {diagram.name}
+              </h3>
+              <p className={`text-sm ${diagram.id === currentDiagramId ? 'text-blue-100' : 'text-gray-400'}`}>
                 Updated {new Date(diagram.updatedAt).toLocaleDateString()}
               </p>
             </button>
             <div className="flex space-x-1">
               <button
                 onClick={() => onShare(diagram)}
-                className="p-2 text-gray-400 hover:text-blue-400 rounded-full hover:bg-gray-600"
+                className={`p-2 rounded-full transition-colors ${
+                  diagram.id === currentDiagramId
+                    ? 'text-blue-100 hover:text-white hover:bg-blue-500'
+                    : 'text-gray-400 hover:text-blue-400 hover:bg-gray-600'
+                }`}
                 title="Share Diagram"
               >
                 <Share className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onExportSingle(diagram)}
-                className="p-2 text-gray-400 hover:text-green-400 rounded-full hover:bg-gray-600"
+                className={`p-2 rounded-full transition-colors ${
+                  diagram.id === currentDiagramId
+                    ? 'text-blue-100 hover:text-white hover:bg-blue-500'
+                    : 'text-gray-400 hover:text-green-400 hover:bg-gray-600'
+                }`}
                 title="Export as .mmd file"
               >
                 <FileDown className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onRename(diagram)}
-                className="p-2 text-gray-400 hover:text-gray-200 rounded-full hover:bg-gray-600"
+                className={`p-2 rounded-full transition-colors ${
+                  diagram.id === currentDiagramId
+                    ? 'text-blue-100 hover:text-white hover:bg-blue-500'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-600'
+                }`}
                 title="Rename Diagram"
               >
                 <Pencil className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(diagram.id)}
-                className="p-2 text-gray-400 hover:text-red-400 rounded-full hover:bg-gray-600"
+                className={`p-2 rounded-full transition-colors ${
+                  diagram.id === currentDiagramId
+                    ? 'text-blue-100 hover:text-white hover:bg-blue-500'
+                    : 'text-gray-400 hover:text-red-400 hover:bg-gray-600'
+                }`}
                 title="Delete Diagram"
               >
                 <Trash2 className="w-4 h-4" />
