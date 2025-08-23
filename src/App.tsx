@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Code, Eye, List, FolderPlus, Copy, Check } from 'lucide-react';
+import { Code, Eye, List, FolderPlus, Copy, Check, FileText } from 'lucide-react';
 import CreateDiagramModal from './components/CreateDiagramModal';
+import TemplatesModal from './components/TemplatesModal';
 import AlertModal from './components/AlertModal';
 import ConfirmModal from './components/ConfirmModal';
 import PromptModal from './components/PromptModal';
 import { diagramStorage, type Diagram } from './services/DiagramStorage';
 import { diagramExportImport } from './services/DiagramExportImport';
 import { isMermaidDiagram, generateDiagramName } from './utils/mermaidDetector';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { type DiagramTemplate } from './data/templates';
 import Editor from './components/Editor';
 import DiagramPreview from './components/DiagramPreview';
 import DiagramList from './components/DiagramList';
@@ -54,6 +57,7 @@ function App() {
   const [copySuccess, setCopySuccess] = useState(false);
 
   // Modal states
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
     message: string;
@@ -134,12 +138,45 @@ function App() {
     setCurrentDiagram(newDiagram);
   };
 
+  const handleSelectTemplate = (template: DiagramTemplate) => {
+    const templateName = `${template.name} - ${new Date().toLocaleDateString()}`;
+    const newDiagram = diagramStorage.saveDiagram(templateName, template.code);
+    setDiagrams([...diagrams, newDiagram]);
+    setCurrentDiagram(newDiagram);
+    
+    setAlertModal({
+      isOpen: true,
+      message: `Created new diagram "${templateName}" using ${template.name} template!`,
+      title: 'Template Applied',
+      type: 'success'
+    });
+  };
+
   const handleSave = () => {
+    // Don't save welcome diagram
+    if (currentDiagram.id === 'welcome') {
+      setAlertModal({
+        isOpen: true,
+        message: 'To save changes, please create a new diagram first using the "New Diagram" button.',
+        title: 'Save Welcome Guide',
+        type: 'info'
+      });
+      return;
+    }
+    
     const updated = diagramStorage.updateDiagram(currentDiagram.id, {
       code: currentDiagram.code
     });
     setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
     setCurrentDiagram(updated);
+    
+    // Show save confirmation
+    setAlertModal({
+      isOpen: true,
+      message: `Diagram "${currentDiagram.name}" has been saved successfully!`,
+      title: 'Saved',
+      type: 'success'
+    });
   };
 
   const handleDelete = (id: string) => {
@@ -346,6 +383,34 @@ function App() {
     };
   }, []);
 
+  // Handle escape key for closing modals/dropdowns
+  const handleEscape = () => {
+    if (alertModal.isOpen) {
+      setAlertModal({ ...alertModal, isOpen: false });
+    } else if (confirmModal.isOpen) {
+      setConfirmModal({ ...confirmModal, isOpen: false });
+    } else if (promptModal.isOpen) {
+      setPromptModal({ ...promptModal, isOpen: false });
+    } else if (showCreateModal) {
+      setShowCreateModal(false);
+    } else if (showTemplatesModal) {
+      setShowTemplatesModal(false);
+    }
+  };
+
+  // Check if any modal is open
+  const isModalOpen = alertModal.isOpen || confirmModal.isOpen || promptModal.isOpen || showCreateModal || showTemplatesModal;
+
+  // Setup keyboard shortcuts
+  useKeyboardShortcuts({
+    onCopy: handleCopyCode,
+    onSave: handleSave,
+    onNew: () => setShowCreateModal(true),
+    onToggleView: toggleView,
+    onEscape: handleEscape,
+    isModalOpen
+  });
+
   return (
     <div 
       className="min-h-screen bg-gray-900 text-gray-100"
@@ -356,15 +421,25 @@ function App() {
         {/* Sidebar */}
         {showSidebar && (
           <div className="w-80 bg-gray-800 rounded-xl shadow-xl p-4 space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold">My Diagrams</h2>
+            </div>
+            <div className="flex gap-2 mb-4">
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors flex-1"
                 title="Create New Diagram"
               >
-                <FolderPlus className="w-5 h-5" />
-                <span className="text-sm font-medium">New Diagram</span>
+                <FolderPlus className="w-4 h-4" />
+                <span className="text-sm font-medium">New</span>
+              </button>
+              <button
+                onClick={() => setShowTemplatesModal(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-blue-700 rounded-lg hover:bg-blue-600 transition-colors flex-1"
+                title="Use Template"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="text-sm font-medium">Templates</span>
               </button>
             </div>
             <DiagramList
@@ -394,7 +469,12 @@ function App() {
                     <List className="w-5 h-5" />
                   </button>
                 )}
-                <h1 className="text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Ctrl+C Copy • Ctrl+S Save • Ctrl+N New • Ctrl+E Toggle View • Esc Close
+                  </div>
+                </div>
               </div>
               <div className="flex space-x-2">
                 <button
@@ -463,6 +543,12 @@ function App() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onConfirm={handleCreateNew}
+      />
+      
+      <TemplatesModal
+        isOpen={showTemplatesModal}
+        onClose={() => setShowTemplatesModal(false)}
+        onSelectTemplate={handleSelectTemplate}
       />
 
       {/* Custom Modals */}
