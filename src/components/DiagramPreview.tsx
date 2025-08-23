@@ -11,6 +11,11 @@ interface DiagramPreviewProps {
   onFullScreenChange?: (isFullScreen: boolean) => void;
 }
 
+/**
+ * DiagramPreview component that renders Mermaid diagrams
+ * Theme switching changes the container background color, not the diagram content
+ * This ensures consistent diagram appearance while providing visual theme options
+ */
 export default function DiagramPreview({ code, theme, onThemeChange, isFullScreen, onFullScreenChange }: DiagramPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -22,11 +27,11 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
-      theme: theme,
+      theme: 'default', // Always use default theme for consistent diagram appearance
       securityLevel: 'loose',
       logLevel: 'error',
     });
-  }, [theme]);
+  }, []);
 
   useEffect(() => {
     const renderDiagram = async () => {
@@ -63,6 +68,8 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
     renderDiagram();
   }, [code, theme]);
 
+  // Toggle between light and dark background themes
+  // Note: This changes the container background, not the diagram content
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     onThemeChange(newTheme);
@@ -99,7 +106,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
 
       // Convert the diagram content to canvas with full content
       const canvas = await html2canvas(contentRef.current, {
-        backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937',
+        backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937', // Use theme background color
         scale: 2, // Higher quality
         useCORS: true,
         allowTaint: true,
@@ -203,7 +210,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
     }
 
     const diagramContent = contentRef.current?.innerHTML || '';
-    const backgroundColor = theme === 'light' ? '#ffffff' : '#1f2937';
+    const backgroundColor = theme === 'light' ? '#ffffff' : '#1f2937'; // Use theme background color
     const textColor = theme === 'light' ? '#000000' : '#ffffff';
 
     printWindow.document.write(`
@@ -267,7 +274,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
       const clonedSvg = svgElement.cloneNode(true) as SVGElement;
       
       // Set background color based on theme
-      const backgroundColor = theme === 'light' ? '#ffffff' : '#1f2937';
+      const backgroundColor = theme === 'light' ? '#ffffff' : '#1f2937'; // Use theme background color
       clonedSvg.style.backgroundColor = backgroundColor;
       
       // Convert SVG to string
@@ -323,7 +330,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
 
       // Convert the diagram content to canvas with full content
       const canvas = await html2canvas(contentRef.current, {
-        backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937',
+        backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937', // Use theme background color
         scale: 2, // Higher quality
         useCORS: true,
         allowTaint: true,
@@ -435,7 +442,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
         <button
           onClick={toggleTheme}
           className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
-          title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Theme`}
+          title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Background`}
         >
           {theme === 'light' ? (
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -561,6 +568,10 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
       {/* Diagram container */}
       <div 
         className="flex-1 overflow-hidden relative"
+        style={{
+          backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937',
+          border: `2px solid ${theme === 'light' ? '#e5e7eb' : '#374151'}`
+        }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
