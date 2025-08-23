@@ -1,45 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { Code, Eye, List, FolderPlus } from 'lucide-react';
+import { Code, Eye, List, FolderPlus, Copy, Check } from 'lucide-react';
 import CreateDiagramModal from './components/CreateDiagramModal';
+import AlertModal from './components/AlertModal';
+import ConfirmModal from './components/ConfirmModal';
+import PromptModal from './components/PromptModal';
 import { diagramStorage, type Diagram } from './services/DiagramStorage';
+import { diagramExportImport } from './services/DiagramExportImport';
+import { isMermaidDiagram, generateDiagramName } from './utils/mermaidDetector';
 import Editor from './components/Editor';
 import DiagramPreview from './components/DiagramPreview';
 import DiagramList from './components/DiagramList';
 
-const DEFAULT_DIAGRAM = {
-  id: 'default',
-  name: 'Welcome to Mermaid Diagram Editor',
-  code: `graph TD
-    Start[Get Started] --> Create[Click + to Create New Diagram]
-    Start --> Edit[Edit Existing Diagrams]
-    Start --> Preview[Toggle Preview/Code View]
+const WELCOME_DIAGRAM = {
+  id: 'welcome',
+  name: '🎉 Welcome to Mermaid Diagram Editor',
+  code: `flowchart TD
+    Start([🚀 Welcome to Mermaid Editor]) --> Features[✨ Key Features]
     
-    Create --> Name[Enter Diagram Name]
-    Name --> Code[Write Mermaid Code]
+    Features --> Import[📁 Import & Export]
+    Features --> Share[🔗 Share Diagrams]
+    Features --> Editor[✏️ Live Editor]
+    Features --> Export[💾 Export Options]
     
-    Edit --> List[Click List Button]
-    List --> Select[Select a Diagram]
-    Select --> Modify[Edit or Delete]
+    Import --> ImportFiles["📄 Drag & drop .mmd/.json files<br/>🔄 Import button for file selection<br/>📋 Export all diagrams as backup"]
     
-    Preview --> View[Eye Icon: Preview Mode]
-    Preview --> Source[Code Icon: Edit Mode]
-    Preview --> FullScreen[Expand Icon: Full Screen]
+    Share --> ShareOptions["🔗 Generate shareable URLs<br/>📋 Copy links to clipboard<br/>🌐 Open shared diagrams instantly"]
     
-    style Start fill:#f9f,stroke:#333,stroke-width:4px
-    style Preview fill:#bbf,stroke:#333
-    style Edit fill:#bfb,stroke:#333
-    style Create fill:#fbf,stroke:#333`,
-  theme: 'light' as const,
+    Editor --> EditorFeatures["👁️ Live preview mode<br/>📝 Code editor with syntax<br/>🎨 Light/dark themes<br/>🔍 Zoom & pan controls"]
+    
+    Export --> ExportFormats["📄 PDF export<br/>🖼️ PNG/SVG images<br/>🖨️ Print support<br/>📁 .mmd file format"]
+    
+    Features --> GetStarted[🎯 Get Started]
+    GetStarted --> NewDiagram["➕ Click 'New Diagram' to create<br/>📝 Write Mermaid syntax in editor<br/>👁️ Toggle preview/code view"]
+    
+    GetStarted --> Tips[💡 Tips]
+    Tips --> TipsList["🖱️ Right-click to pan anytime<br/>⚡ Auto-save keeps your work safe<br/>📱 Works on all devices<br/>🎮 Use keyboard arrows to navigate"]
+    
+    style Start fill:#4F46E5,stroke:#1E40AF,stroke-width:3px,color:#fff
+    style Features fill:#7C3AED,stroke:#5B21B6,stroke-width:2px,color:#fff
+    style GetStarted fill:#059669,stroke:#047857,stroke-width:2px,color:#fff
+    style Tips fill:#DC2626,stroke:#B91C1C,stroke-width:2px,color:#fff`,
+  theme: 'dark' as const,
   createdAt: Date.now(),
   updatedAt: Date.now(),
 };
 
 function App() {
   const [diagrams, setDiagrams] = useState<Diagram[]>([]);
-  const [currentDiagram, setCurrentDiagram] = useState<Diagram>(DEFAULT_DIAGRAM);
+  const [currentDiagram, setCurrentDiagram] = useState<Diagram>(WELCOME_DIAGRAM);
   const [isPreview, setIsPreview] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Modal states
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    title?: string;
+    type?: 'success' | 'error' | 'warning' | 'info';
+    onConfirm?: () => void;
+  }>({ isOpen: false, message: '' });
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    title?: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'primary';
+  }>({ isOpen: false, message: '', onConfirm: () => {} });
+
+  const [promptModal, setPromptModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    title?: string;
+    defaultValue?: string;
+    onConfirm: (value: string) => void;
+  }>({ isOpen: false, message: '', onConfirm: () => {} });
 
   useEffect(() => {
     const stored = diagramStorage.getAllDiagrams();
@@ -49,6 +86,41 @@ function App() {
       theme: diagram.theme || 'light'
     }));
     setDiagrams(diagramsWithTheme);
+
+    // Check for shared diagram in URL first
+    const sharedDiagram = diagramExportImport.importFromURL();
+    if (sharedDiagram) {
+      // Save the shared diagram
+      const saved = diagramStorage.saveDiagram(sharedDiagram.name, sharedDiagram.code);
+      const withTheme = diagramStorage.updateDiagram(saved.id, { theme: sharedDiagram.theme });
+      
+      setDiagrams(prev => [...prev, withTheme]);
+      setCurrentDiagram(withTheme);
+      
+      // Clear the URL parameter to avoid re-importing on refresh
+      const url = new URL(window.location.href);
+      url.searchParams.delete('shared');
+      window.history.replaceState({}, '', url.toString());
+      
+      setAlertModal({
+        isOpen: true,
+        message: `Imported shared diagram: "${sharedDiagram.name}"`,
+        title: 'Diagram Imported',
+        type: 'success'
+      });
+    } else {
+      // Check if this is first visit (no stored diagrams and no welcome seen flag)
+      const hasSeenWelcome = localStorage.getItem('hasSeenWelcome') === 'true';
+      
+      if (diagramsWithTheme.length > 0 && hasSeenWelcome) {
+        // Show first diagram if user has seen welcome before
+        setCurrentDiagram(diagramsWithTheme[0]);
+      } else if (diagramsWithTheme.length === 0) {
+        // First time user - show welcome and mark as seen
+        localStorage.setItem('hasSeenWelcome', 'true');
+      }
+      // Otherwise keep showing welcome diagram
+    }
   }, []);
 
   const toggleView = () => setIsPreview(!isPreview);
@@ -71,24 +143,37 @@ function App() {
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('Are you sure you want to delete this diagram?')) return;
-    
-    diagramStorage.deleteDiagram(id);
-    setDiagrams(diagrams.filter(d => d.id !== id));
-    if (currentDiagram.id === id) {
-      setCurrentDiagram(DEFAULT_DIAGRAM);
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: 'Are you sure you want to delete this diagram? This action cannot be undone.',
+      title: 'Delete Diagram',
+      variant: 'danger',
+      onConfirm: () => {
+        diagramStorage.deleteDiagram(id);
+        setDiagrams(diagrams.filter(d => d.id !== id));
+        if (currentDiagram.id === id) {
+          // If deleting current diagram, show welcome or first available diagram
+          const remaining = diagrams.filter(d => d.id !== id);
+          setCurrentDiagram(remaining.length > 0 ? remaining[0] : WELCOME_DIAGRAM);
+        }
+      }
+    });
   };
 
   const handleRename = (diagram: Diagram) => {
-    const newName = prompt('Enter new name:', diagram.name);
-    if (!newName) return;
-
-    const updated = diagramStorage.updateDiagram(diagram.id, { name: newName });
-    setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
-    if (currentDiagram.id === diagram.id) {
-      setCurrentDiagram(updated);
-    }
+    setPromptModal({
+      isOpen: true,
+      message: 'Enter a new name for the diagram:',
+      title: 'Rename Diagram',
+      defaultValue: diagram.name,
+      onConfirm: (newName: string) => {
+        const updated = diagramStorage.updateDiagram(diagram.id, { name: newName });
+        setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
+        if (currentDiagram.id === diagram.id) {
+          setCurrentDiagram(updated);
+        }
+      }
+    });
   };
 
   const handleCodeChange = (code: string) => {
@@ -104,15 +189,169 @@ function App() {
   const handleThemeChange = (theme: 'light' | 'dark') => {
     setCurrentDiagram(prev => ({ ...prev, theme }));
     
-    // Save theme change to storage immediately
-    const updated = diagramStorage.updateDiagram(currentDiagram.id, {
-      theme: theme
-    });
-    setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
+    // Only save theme change to storage if it's a saved diagram (not welcome)
+    if (currentDiagram.id !== 'welcome') {
+      const updated = diagramStorage.updateDiagram(currentDiagram.id, {
+        theme: theme
+      });
+      setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
+    }
   };
 
+  const handleImport = (importedDiagrams: Diagram[]) => {
+    // Save all imported diagrams to storage
+    const savedDiagrams: Diagram[] = [];
+    importedDiagrams.forEach(diagram => {
+      const saved = diagramStorage.saveDiagram(diagram.name, diagram.code);
+      // Update theme if provided
+      if (diagram.theme) {
+        const withTheme = diagramStorage.updateDiagram(saved.id, { theme: diagram.theme });
+        savedDiagrams.push(withTheme);
+      } else {
+        savedDiagrams.push(saved);
+      }
+    });
+    
+    // Update state with new diagrams
+    setDiagrams(prev => [...prev, ...savedDiagrams]);
+    
+    // Select the first imported diagram
+    if (savedDiagrams.length > 0) {
+      setCurrentDiagram(savedDiagrams[0]);
+    }
+  };
+
+  const handleExportSingle = (diagram: Diagram) => {
+    diagramExportImport.exportSingleAsMmd(diagram);
+  };
+
+  const handleShare = async (diagram: Diagram) => {
+    try {
+      const success = await diagramExportImport.copyShareURLToClipboard(diagram);
+      if (success) {
+        setAlertModal({
+          isOpen: true,
+          message: 'Share link copied to clipboard! Anyone with this link can open the diagram.',
+          title: 'Link Copied',
+          type: 'success'
+        });
+      } else {
+        // Fallback: show the URL in a prompt
+        const shareURL = diagramExportImport.createShareableURL(diagram);
+        setPromptModal({
+          isOpen: true,
+          message: 'Copy this URL to share the diagram:',
+          title: 'Share Diagram',
+          defaultValue: shareURL,
+          onConfirm: () => {} // Just close the modal
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create share link:', error);
+      setAlertModal({
+        isOpen: true,
+        message: 'Failed to create share link. Please try again.',
+        title: 'Share Failed',
+        type: 'error'
+      });
+    }
+  };
+
+  // Copy code to clipboard
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(currentDiagram.code);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000); // Reset after 2 seconds
+    } catch (error) {
+      console.error('Failed to copy code:', error);
+      setAlertModal({
+        isOpen: true,
+        message: 'Failed to copy code to clipboard. Please try again.',
+        title: 'Copy Failed',
+        type: 'error'
+      });
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    
+    if (files.length > 0) {
+      const result = await diagramExportImport.processDroppedFiles(files);
+      
+      if (result.success && 'diagrams' in result) {
+        handleImport(result.diagrams as Diagram[]);
+        
+        let message = `Imported ${result.imported} diagram(s) via drag & drop`;
+        if (result.errors.length > 0) {
+          message += `\nErrors: ${result.errors.join(', ')}`;
+        }
+        setAlertModal({
+          isOpen: true,
+          message,
+          title: 'Import Complete',
+          type: result.errors.length > 0 ? 'warning' : 'success'
+        });
+      } else {
+        setAlertModal({
+          isOpen: true,
+          message: `Import failed: ${result.errors.join(', ')}`,
+          title: 'Import Failed',
+          type: 'error'
+        });
+      }
+    }
+  };
+
+  // Paste functionality for creating diagrams from clipboard
+  const handlePaste = async (e: ClipboardEvent) => {
+    try {
+      const clipboardText = e.clipboardData?.getData('text');
+      if (!clipboardText) return;
+
+      // Check if the pasted text is a Mermaid diagram
+      if (isMermaidDiagram(clipboardText)) {
+        e.preventDefault(); // Prevent default paste behavior
+        
+        const diagramName = generateDiagramName(clipboardText);
+        const newDiagram = diagramStorage.saveDiagram(diagramName, clipboardText);
+        setDiagrams(prev => [...prev, newDiagram]);
+        setCurrentDiagram(newDiagram);
+        
+        setAlertModal({
+          isOpen: true,
+          message: `Created new diagram "${diagramName}" from pasted content!`,
+          title: 'Diagram Created',
+          type: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to process pasted content:', error);
+    }
+  };
+
+  // Add paste event listener
+  useEffect(() => {
+    document.addEventListener('paste', handlePaste);
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
+    <div 
+      className="min-h-screen bg-gray-900 text-gray-100"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="container mx-auto px-4 py-8 flex gap-4">
         {/* Sidebar */}
         {showSidebar && (
@@ -133,6 +372,10 @@ function App() {
               onSelect={setCurrentDiagram}
               onDelete={handleDelete}
               onRename={handleRename}
+              onImport={handleImport}
+              onExportSingle={handleExportSingle}
+              onShare={handleShare}
+              onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
             />
           </div>
         )}
@@ -154,6 +397,23 @@ function App() {
                 <h1 className="text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
               </div>
               <div className="flex space-x-2">
+                <button
+                  onClick={handleCopyCode}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+                  title="Copy diagram code to clipboard"
+                >
+                  {copySuccess ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2 text-green-400" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy Code
+                    </>
+                  )}
+                </button>
                 <button
                   onClick={toggleView}
                   className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
@@ -182,6 +442,12 @@ function App() {
                 onThemeChange={handleThemeChange}
                 isFullScreen={isFullScreen} 
                 onFullScreenChange={setIsFullScreen}
+                onAlert={(message, title, type) => setAlertModal({
+                  isOpen: true,
+                  message,
+                  title,
+                  type
+                })}
               />
             ) : (
               <Editor 
@@ -197,6 +463,34 @@ function App() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onConfirm={handleCreateNew}
+      />
+
+      {/* Custom Modals */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        message={alertModal.message}
+        title={alertModal.title}
+        type={alertModal.type}
+        onConfirm={alertModal.onConfirm}
+      />
+      
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        title={confirmModal.title}
+        variant={confirmModal.variant}
+      />
+      
+      <PromptModal
+        isOpen={promptModal.isOpen}
+        onClose={() => setPromptModal({ ...promptModal, isOpen: false })}
+        onConfirm={promptModal.onConfirm}
+        message={promptModal.message}
+        title={promptModal.title}
+        defaultValue={promptModal.defaultValue}
       />
     </div>
   );

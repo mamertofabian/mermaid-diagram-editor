@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import '../print.css';
 
 interface DiagramPreviewProps {
   code: string;
@@ -9,6 +10,7 @@ interface DiagramPreviewProps {
   onThemeChange: (theme: 'light' | 'dark') => void;
   isFullScreen: boolean;
   onFullScreenChange?: (isFullScreen: boolean) => void;
+  onAlert?: (message: string, title?: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
 /**
@@ -16,7 +18,7 @@ interface DiagramPreviewProps {
  * Theme switching changes the container background color, not the diagram content
  * This ensures consistent diagram appearance while providing visual theme options
  */
-export default function DiagramPreview({ code, theme, onThemeChange, isFullScreen, onFullScreenChange }: DiagramPreviewProps) {
+export default function DiagramPreview({ code, theme, onThemeChange, isFullScreen, onFullScreenChange, onAlert }: DiagramPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -30,7 +32,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
-      theme: 'default', // Always use default theme for consistent diagram appearance
+      theme: 'default', // Always use default theme for best readability
       securityLevel: 'loose',
       logLevel: 'error',
     });
@@ -110,7 +112,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
 
       // Convert the diagram content to canvas with full content
       const canvas = await html2canvas(contentRef.current, {
-        backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937', // Use theme background color
+        backgroundColor: theme === 'light' ? '#ffffff' : '#f8fafc', // Use theme background color
         scale: 2, // Higher quality
         useCORS: true,
         allowTaint: true,
@@ -186,7 +188,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
 
     } catch (error) {
       console.error('PDF export error:', error);
-      alert('Failed to export PDF. Please try again.');
+      onAlert?.('Failed to export PDF. Please try again.', 'Export Failed', 'error');
     } finally {
       setIsExporting(false);
     }
@@ -196,12 +198,12 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
     // Create a new window with just the diagram for printing
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('Please allow popups to use the print feature.');
+      onAlert?.('Please allow popups to use the print feature.', 'Popup Blocked', 'warning');
       return;
     }
 
     const diagramContent = contentRef.current?.innerHTML || '';
-    const backgroundColor = theme === 'light' ? '#ffffff' : '#1f2937'; // Use theme background color
+    const backgroundColor = theme === 'light' ? '#ffffff' : '#f8fafc'; // Use theme background color
     const textColor = theme === 'light' ? '#000000' : '#ffffff';
 
     printWindow.document.write(`
@@ -256,7 +258,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
     
     const svgElement = contentRef.current.querySelector('svg');
     if (!svgElement) {
-      alert('No diagram to export.');
+      onAlert?.('No diagram to export.', 'Export Failed', 'warning');
       return;
     }
 
@@ -265,7 +267,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
       const clonedSvg = svgElement.cloneNode(true) as SVGElement;
       
       // Set background color based on theme
-      const backgroundColor = theme === 'light' ? '#ffffff' : '#1f2937'; // Use theme background color
+      const backgroundColor = theme === 'light' ? '#ffffff' : '#f8fafc'; // Use theme background color
       clonedSvg.style.backgroundColor = backgroundColor;
       
       // Convert SVG to string
@@ -286,7 +288,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('SVG export error:', error);
-      alert('Failed to export SVG. Please try again.');
+      onAlert?.('Failed to export SVG. Please try again.', 'Export Failed', 'error');
     }
   };
 
@@ -312,7 +314,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
 
       // Convert the diagram content to canvas with full content
       const canvas = await html2canvas(contentRef.current, {
-        backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937', // Use theme background color
+        backgroundColor: theme === 'light' ? '#ffffff' : '#f8fafc', // Use theme background color
         scale: 2, // Higher quality
         useCORS: true,
         allowTaint: true,
@@ -343,7 +345,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
 
     } catch (error) {
       console.error('PNG export error:', error);
-      alert('Failed to export PNG. Please try again.');
+      onAlert?.('Failed to export PNG. Please try again.', 'Export Failed', 'error');
     } finally {
       setIsExporting(false);
     }
@@ -390,10 +392,8 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    // Prevent context menu when panning is enabled
-    if (isPanningEnabled) {
-      e.preventDefault();
-    }
+    // Always prevent context menu to allow right-click panning
+    e.preventDefault();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -480,14 +480,13 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
               ? 'bg-blue-600 hover:bg-blue-700 text-white' 
               : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
           }`}
-          title={isPanningEnabled ? "Disable Panning" : "Enable Panning"}
+          title={isPanningEnabled ? "Disable Left-Click Panning (Right-click always enabled)" : "Enable Left-Click Panning"}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <path d="M14 2v6h6"/>
-            <path d="M16 13H8"/>
-            <path d="M16 17H8"/>
-            <path d="M10 9H8"/>
+            <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/>
+            <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/>
+            <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
+            <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
           </svg>
         </button>
 
@@ -668,9 +667,9 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
 
       {/* Diagram container */}
       <div 
-        className="flex-1 overflow-hidden relative"
+        className="flex-1 overflow-hidden relative diagram-print-area"
         style={{
-          backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937',
+          backgroundColor: theme === 'light' ? '#ffffff' : '#f8fafc',
           border: `2px solid ${theme === 'light' ? '#e5e7eb' : '#374151'}`,
           userSelect: isPanningEnabled ? 'none' : 'text',
         }}

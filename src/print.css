@@ -1,0 +1,80 @@
+@media print {
+  /* Reset everything for print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Hide everything except the diagram when printing */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  .diagram-print-area,
+  .diagram-print-area * {
+    visibility: visible !important;
+  }
+  
+  /* Style the print area */
+  .diagram-print-area {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    z-index: 9999 !important;
+  }
+  
+  /* Reset the diagram content for print */
+  .diagram-print-area > div {
+    transform: none !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: 95% !important;
+    max-height: 95% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  .diagram-print-area svg {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    background: white !important;
+    display: block !important;
+  }
+  
+  /* Hide all controls, buttons, and UI elements */
+  .absolute,
+  button,
+  .sidebar,
+  .controls,
+  [class*="bg-gray"],
+  [class*="rounded"],
+  [class*="shadow"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Ensure proper page margins */
+  @page {
+    margin: 0.5in;
+    size: auto;
+  }
+}

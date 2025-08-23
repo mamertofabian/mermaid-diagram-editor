@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#gradient1)" stroke="#1e293b" stroke-width="2"/>
+  
+  <!-- Mermaid tail -->
+  <path d="M30 65 Q35 70 45 65 Q50 60 45 55 Q35 50 30 55 Z" fill="#ffffff" opacity="0.9"/>
+  <path d="M25 70 Q30 75 40 70 Q45 65 40 60 Q30 55 25 60 Z" fill="#ffffff" opacity="0.7"/>
+  
+  <!-- Flowchart nodes -->
+  <rect x="35" y="25" width="15" height="8" rx="2" fill="#ffffff" opacity="0.95"/>
+  <rect x="55" y="35" width="15" height="8" rx="2" fill="#ffffff" opacity="0.95"/>
+  <rect x="35" y="45" width="15" height="8" rx="2" fill="#ffffff" opacity="0.95"/>
+  
+  <!-- Connection lines -->
+  <line x1="50" y1="29" x2="55" y2="39" stroke="#ffffff" stroke-width="2" opacity="0.8"/>
+  <line x1="62" y1="43" x2="50" y2="49" stroke="#ffffff" stroke-width="2" opacity="0.8"/>
+  
+  <!-- Arrows -->
+  <polygon points="54,38 56,36 56,40" fill="#ffffff" opacity="0.8"/>
+  <polygon points="51,48 49,46 49,50" fill="#ffffff" opacity="0.8"/>
+</svg>
