@@ -25,6 +25,7 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPanningEnabled, setIsPanningEnabled] = useState(true);
 
   useEffect(() => {
     mermaid.initialize({
@@ -362,7 +363,15 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 0) { // Left click only
+    // Always allow right-click panning regardless of toggle state
+    if (e.button === 2) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - scrollPosition.x, y: e.clientY - scrollPosition.y });
+      return;
+    }
+    
+    // Left-click panning only when enabled
+    if (e.button === 0 && isPanningEnabled) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - scrollPosition.x, y: e.clientY - scrollPosition.y });
     }
@@ -380,7 +389,35 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
     setIsDragging(false);
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    // Prevent context menu when panning is enabled
+    if (isPanningEnabled) {
+      e.preventDefault();
+    }
+  };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const panStep = 20; // Pixels to move per key press
+    
+    switch (e.key) {
+      case 'ArrowUp':
+        e.preventDefault();
+        setScrollPosition(prev => ({ ...prev, y: prev.y + panStep }));
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        setScrollPosition(prev => ({ ...prev, y: prev.y - panStep }));
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        setScrollPosition(prev => ({ ...prev, x: prev.x + panStep }));
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        setScrollPosition(prev => ({ ...prev, x: prev.x - panStep }));
+        break;
+    }
+  };
 
   useEffect(() => {
     const element = containerRef.current;
@@ -435,6 +472,25 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
     >
       {/* Controls */}
       <div className="absolute top-4 right-4 flex gap-2 z-10">
+        {/* Panning Toggle */}
+        <button
+          onClick={() => setIsPanningEnabled(!isPanningEnabled)}
+          className={`rounded-lg p-2 shadow-md ${
+            isPanningEnabled 
+              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+          }`}
+          title={isPanningEnabled ? "Disable Panning" : "Enable Panning"}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <path d="M14 2v6h6"/>
+            <path d="M16 13H8"/>
+            <path d="M16 17H8"/>
+            <path d="M10 9H8"/>
+          </svg>
+        </button>
+
         <button
           onClick={toggleTheme}
           className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
@@ -615,12 +671,16 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
         className="flex-1 overflow-hidden relative"
         style={{
           backgroundColor: theme === 'light' ? '#ffffff' : '#1f2937',
-          border: `2px solid ${theme === 'light' ? '#e5e7eb' : '#374151'}`
+          border: `2px solid ${theme === 'light' ? '#e5e7eb' : '#374151'}`,
+          userSelect: isPanningEnabled ? 'none' : 'text',
         }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onContextMenu={handleContextMenu}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
         ref={containerRef}
       >
         <div
@@ -630,7 +690,8 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
             transform: `scale(${zoomLevel}) translate(${scrollPosition.x}px, ${scrollPosition.y}px)`,
             transformOrigin: 'center center',
             transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-            cursor: isDragging ? 'grabbing' : 'grab'
+            cursor: isDragging ? 'grabbing' : (isPanningEnabled ? 'grab' : 'default'),
+            userSelect: isPanningEnabled ? 'none' : 'text',
           }}
         />
       </div>
