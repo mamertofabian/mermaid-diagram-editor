@@ -20,13 +20,6 @@ This document outlines the planned features and improvements for the Mermaid Dia
 - `Ctrl+F` / `Cmd+F` - Search diagrams
 - `Esc` - Close modals/dropdowns
 
-### 📋 **Diagram Templates**
-- **Flowchart Template** - Basic decision flow
-- **Sequence Diagram Template** - User-system interaction
-- **Class Diagram Template** - OOP structure  
-- **State Diagram Template** - State machine
-- **Git Flow Template** - Git branching model
-- **System Architecture Template** - High-level design
 
 ### 📂 **Recent Files**
 - Show last 5 accessed diagrams at top of sidebar
@@ -36,6 +29,16 @@ This document outlines the planned features and improvements for the Mermaid Dia
 ---
 
 ## 🟡 **Phase 2: Medium Priority (Next Month)**
+
+### 🧭 **Guided Diagram Creation** 
+- **Interactive Flowchart Builder** - Visual node-and-edge editor with live Mermaid code generation
+- **Step-by-Step Sequence Wizard** - Form-based interface for creating sequence diagrams
+- **Class Diagram Assistant** - Guided forms for classes, methods, relationships
+- **Visual State Machine Builder** - Drag-and-drop state and transition creator
+- **Mermaid Syntax Tutorial** - Interactive lessons teaching syntax as you create
+- **Live Syntax Help** - Context-sensitive help and autocomplete suggestions
+
+*Note: These visual builders teach Mermaid syntax while creating diagrams, much more valuable than static code templates*
 
 ### 🎨 **Editor Enhancements**
 - **Syntax Highlighting** - Color-coded Mermaid syntax in code editor
@@ -96,11 +99,15 @@ This document outlines the planned features and improvements for the Mermaid Dia
 - About section with author information
 - Welcome guide with feature overview
 - Custom favicon and branding
+- Keyboard shortcuts (Ctrl+C, Ctrl+S, Ctrl+M, Ctrl+E, Esc) ✅
+- Scrollable diagram list with fixed controls ✅
 
 ### 🚧 **In Progress**
-- Keyboard shortcuts implementation
-- Diagram templates system
 - Recent files functionality
+- Guided diagram creation system (rethinking templates approach)
+
+### 💡 **Key Insight**
+Instead of simple code templates, users need **guided creation tools** that teach Mermaid syntax while building diagrams. This is especially important for users unfamiliar with Mermaid syntax.
 
 ### 📝 **Planned**
 - Syntax highlighting for code editor
@@ -133,5 +140,5 @@ Have ideas for new features? [Open an issue](https://github.com/mamertofabian/me
 
 ---
 
-*Last updated: $(date +'%Y-%m-%d')*  
+*Last updated: 2025-01-23*  
 *Maintained by: [Mamerto Fabian](https://mamerto.codefrost.dev) at [Codefrost](https://codefrost.dev)*

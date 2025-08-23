@@ -54,6 +54,20 @@ This is a React + TypeScript web application for creating and editing Mermaid di
 - **Responsive Design**: Tailwind classes provide mobile-friendly layout
 - **Auto-save**: All changes (code, theme, name) are immediately persisted to localStorage
 
+### Additional Services & Utilities
+
+- **DiagramExportImport.ts**: Service for file import/export, URL sharing, and backup functionality
+- **useKeyboardShortcuts.ts**: Custom hook managing keyboard shortcuts (Ctrl+C, Ctrl+S, Ctrl+M, Ctrl+E, Esc)
+- **mermaidDetector.ts**: Utility for detecting valid Mermaid syntax and generating diagram names
+- **templates.ts**: Pre-defined diagram templates for quick diagram creation
+
+### Key Interaction Patterns
+
+- **Drag & Drop Import**: Files can be dropped anywhere on the app to import diagrams
+- **Smart Paste Detection**: Pasting Mermaid code automatically creates new diagrams
+- **URL Sharing**: Diagrams can be shared via base64-encoded URLs with `?shared=` parameter
+- **Custom Modals**: All user interactions use custom modals (AlertModal, ConfirmModal, PromptModal) instead of browser dialogs
+
 ## Development Guidelines
 
 - Use existing Tailwind dark theme classes (bg-gray-800, text-gray-100, etc.)
@@ -61,3 +75,5 @@ This is a React + TypeScript web application for creating and editing Mermaid di
 - Maintain the auto-save functionality when adding new diagram properties
 - Keep Mermaid theme as 'default' to ensure consistent diagram rendering
 - Use lucide-react icons for consistency with existing UI
+- Handle errors gracefully with try/catch blocks and user-friendly error messages
+- Always validate Mermaid syntax before rendering to prevent crashes
