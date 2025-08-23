@@ -420,7 +420,7 @@ function App() {
       <div className="container mx-auto px-4 py-8 flex gap-4">
         {/* Sidebar */}
         {showSidebar && (
-          <div className="w-80 bg-gray-800 rounded-xl shadow-xl p-4 space-y-4">
+          <div className="w-80 bg-gray-800 rounded-xl shadow-xl p-4 flex flex-col h-[calc(100vh-4rem)]">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold">My Diagrams</h2>
             </div>
@@ -442,16 +442,18 @@ function App() {
                 <span className="text-sm font-medium">Templates</span>
               </button>
             </div>
-            <DiagramList
-              diagrams={diagrams}
-              onSelect={setCurrentDiagram}
-              onDelete={handleDelete}
-              onRename={handleRename}
-              onImport={handleImport}
-              onExportSingle={handleExportSingle}
-              onShare={handleShare}
-              onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
-            />
+            <div className="flex-1 min-h-0">
+              <DiagramList
+                diagrams={diagrams}
+                onSelect={setCurrentDiagram}
+                onDelete={handleDelete}
+                onRename={handleRename}
+                onImport={handleImport}
+                onExportSingle={handleExportSingle}
+                onShare={handleShare}
+                onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
+              />
+            </div>
           </div>
         )}
 

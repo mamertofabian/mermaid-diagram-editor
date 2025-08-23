@@ -51,9 +51,9 @@ export default function DiagramList({ diagrams, onSelect, onDelete, onRename, on
   };
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col h-full">
       {/* Import/Export Controls */}
-      <div className="flex gap-2 pb-2 border-b border-gray-600">
+      <div className="flex gap-2 pb-2 border-b border-gray-600 flex-shrink-0">
         <button
           onClick={handleImportClick}
           className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
@@ -81,14 +81,16 @@ export default function DiagramList({ diagrams, onSelect, onDelete, onRename, on
         />
       </div>
 
-      {/* Diagram List */}
-      {diagrams.length === 0 ? (
-        <div className="text-center text-gray-400 py-8">
-          <p>No diagrams yet</p>
-          <p className="text-sm mt-1">Create your first diagram or import existing ones</p>
-        </div>
-      ) : (
-        diagrams.map((diagram) => (
+      {/* Diagram List - Scrollable */}
+      <div className="flex-1 overflow-y-auto min-h-0 py-2">
+        <div className="space-y-2">
+          {diagrams.length === 0 ? (
+            <div className="text-center text-gray-400 py-8">
+              <p>No diagrams yet</p>
+              <p className="text-sm mt-1">Create your first diagram or import existing ones</p>
+            </div>
+          ) : (
+            diagrams.map((diagram) => (
           <div
             key={diagram.id}
             className="flex items-center justify-between p-3 bg-gray-700 rounded-lg shadow-sm hover:bg-gray-600 transition-colors"
@@ -131,13 +133,15 @@ export default function DiagramList({ diagrams, onSelect, onDelete, onRename, on
               >
                 <Trash2 className="w-4 h-4" />
               </button>
+              </div>
             </div>
-          </div>
-        ))
-      )}
+            ))
+          )}
+        </div>
+      </div>
       
-      {/* Welcome Guide Button */}
-      <div className="mt-4 pt-3 border-t border-gray-600">
+      {/* Welcome Guide Button - Fixed at bottom */}
+      <div className="mt-4 pt-3 border-t border-gray-600 flex-shrink-0">
         <button
           onClick={onShowWelcome}
           className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-gray-200 hover:bg-gray-600 rounded-lg transition-colors"
@@ -148,8 +152,8 @@ export default function DiagramList({ diagrams, onSelect, onDelete, onRename, on
         </button>
       </div>
 
-      {/* About Section */}
-      <div className="mt-4 pt-3 border-t border-gray-600">
+      {/* About Section - Fixed at bottom */}
+      <div className="mt-4 pt-3 border-t border-gray-600 flex-shrink-0">
         <div className="p-3">
           <div className="flex items-center gap-2 mb-3">
             <Info className="w-4 h-4 text-blue-400" />
