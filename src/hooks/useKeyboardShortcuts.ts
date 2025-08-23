@@ -41,15 +41,20 @@ export const useKeyboardShortcuts = ({
       if (isCtrlOrCmd) {
         switch (event.key.toLowerCase()) {
           case 'c':
-            event.preventDefault();
-            onCopy();
+            // Only override Ctrl+C if not in a text selection context
+            if (window.getSelection()?.toString() === '') {
+              event.preventDefault();
+              onCopy();
+            }
             break;
           case 's':
             event.preventDefault();
             onSave();
             break;
-          case 'n':
+          case 'm':
+            // Use Ctrl+M for new diagram (M for Mermaid)
             event.preventDefault();
+            event.stopPropagation();
             onNew();
             break;
           case 'e':

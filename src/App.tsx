@@ -472,7 +472,7 @@ function App() {
                 <div>
                   <h1 className="text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
                   <div className="text-xs text-gray-400 mt-1">
-                    Ctrl+C Copy • Ctrl+S Save • Ctrl+N New • Ctrl+E Toggle View • Esc Close
+                    Ctrl+C Copy • Ctrl+S Save • Ctrl+M New • Ctrl+E Toggle View • Esc Close
                   </div>
                 </div>
               </div>
