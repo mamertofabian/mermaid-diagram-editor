@@ -524,6 +524,7 @@ function App() {
             {isPreview ? (
               <DiagramPreview 
                 code={currentDiagram.code}
+                diagramName={currentDiagram.name}
                 theme={currentDiagram.theme}
                 onThemeChange={handleThemeChange}
                 isFullScreen={isFullScreen} 

@@ -9,6 +9,7 @@ import DiagramCanvas from './DiagramPreview/DiagramCanvas';
 
 interface DiagramPreviewProps {
   code: string;
+  diagramName: string;
   theme: 'light' | 'dark';
   onThemeChange: (theme: 'light' | 'dark') => void;
   isFullScreen: boolean;
@@ -21,7 +22,7 @@ interface DiagramPreviewProps {
  * Theme switching changes the container background color, not the diagram content
  * This ensures consistent diagram appearance while providing visual theme options
  */
-export default function DiagramPreview({ code, theme, onThemeChange, isFullScreen, onFullScreenChange, onAlert }: DiagramPreviewProps) {
+export default function DiagramPreview({ code, diagramName, theme, onThemeChange, isFullScreen, onFullScreenChange, onAlert }: DiagramPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -226,6 +227,8 @@ export default function DiagramPreview({ code, theme, onThemeChange, isFullScree
           contentRef={contentRef}
           containerRef={containerRef}
           theme={theme}
+          diagramCode={code}
+          diagramName={diagramName}
           onAlert={onAlert}
         />
         

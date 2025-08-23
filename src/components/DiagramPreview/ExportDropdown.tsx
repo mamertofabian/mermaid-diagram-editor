@@ -6,10 +6,12 @@ interface ExportDropdownProps {
   contentRef: React.RefObject<HTMLDivElement>;
   containerRef: React.RefObject<HTMLDivElement>;
   theme: 'light' | 'dark';
+  diagramCode: string;
+  diagramName: string;
   onAlert?: (message: string, title?: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
-export default function ExportDropdown({ contentRef, containerRef, theme, onAlert }: ExportDropdownProps) {
+export default function ExportDropdown({ contentRef, containerRef, theme, diagramCode, diagramName, onAlert }: ExportDropdownProps) {
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -284,6 +286,29 @@ export default function ExportDropdown({ contentRef, containerRef, theme, onAler
     }
   };
 
+  const exportToMmd = () => {
+    try {
+      const content = diagramCode;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      const safeFileName = diagramName.replace(/[^a-zA-Z0-9-_\s]/g, '');
+      const filename = `${safeFileName}.mmd`;
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('MMD export error:', error);
+      onAlert?.('Failed to export MMD file. Please try again.', 'Export Failed', 'error');
+    }
+  };
+
   // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -399,6 +424,18 @@ export default function ExportDropdown({ contentRef, containerRef, theme, onAler
                 <polyline points="21,15 16,10 5,21"/>
               </svg>
               Export to PNG
+            </button>
+            <button
+              onClick={() => { exportToMmd(); closeExportDropdown(); }}
+              disabled={isExporting}
+              className={`w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700 flex items-center gap-3 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <path d="M12 17V7m0 10l-3-3m3 3l3-3"/>
+              </svg>
+              Export as .mmd
             </button>
           </div>
         </div>
