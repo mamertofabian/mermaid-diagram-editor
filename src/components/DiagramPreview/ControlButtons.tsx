@@ -18,7 +18,7 @@ export default function ControlButtons({
       {/* Panning Toggle */}
       <button
         onClick={onPanningToggle}
-        className={`rounded-lg p-2 shadow-md ${
+        className={`rounded-lg p-2 shadow-md h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] flex items-center justify-center transition-colors ${
           isPanningEnabled 
             ? 'bg-blue-600 hover:bg-blue-700 text-white' 
             : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
@@ -35,7 +35,7 @@ export default function ControlButtons({
 
       <button
         onClick={onThemeChange}
-        className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
+        className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] flex items-center justify-center transition-colors"
         title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Background`}
       >
         {theme === 'light' ? (

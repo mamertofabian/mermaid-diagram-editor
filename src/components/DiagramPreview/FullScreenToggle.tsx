@@ -11,7 +11,7 @@ export default function FullScreenToggle({ isFullScreen, onFullScreenChange }: F
       {isFullScreen ? (
         <button
           onClick={() => onFullScreenChange?.(false)}
-          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] flex items-center justify-center transition-colors"
           title="Exit Full Screen"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -21,7 +21,7 @@ export default function FullScreenToggle({ isFullScreen, onFullScreenChange }: F
       ) : (
         <button
           onClick={() => onFullScreenChange?.(true)}
-          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] flex items-center justify-center transition-colors"
           title="Full Screen"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

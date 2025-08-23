@@ -340,7 +340,7 @@ export default function ExportDropdown({ contentRef, containerRef, theme, diagra
       <button
         onClick={toggleExportDropdown}
         disabled={isExporting}
-        className={`bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md flex items-center gap-2 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] flex items-center justify-center transition-colors ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
         title={isExporting ? "Exporting..." : "Export Options"}
       >
         {isExporting ? (
@@ -357,7 +357,6 @@ export default function ExportDropdown({ contentRef, containerRef, theme, diagra
             <polyline points="10,9 9,9 8,9"/>
           </svg>
         )}
-        <span className="text-sm">{isExporting ? "Exporting..." : "Export"}</span>
         {!isExporting && (
           <svg 
             className={`w-4 h-4 transition-transform ${isExportDropdownOpen ? 'rotate-180' : ''}`} 
@@ -374,7 +373,7 @@ export default function ExportDropdown({ contentRef, containerRef, theme, diagra
 
       {/* Dropdown Menu */}
       {isExportDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-600 z-20">
+        <div className="absolute right-0 bottom-full mb-2 sm:top-full sm:bottom-auto sm:mt-2 sm:mb-0 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-600 z-50 animate-in slide-in-from-bottom-2 sm:slide-in-from-top-2 duration-200">
           <div className="py-1">
             <button
               onClick={() => { exportToPDF(); closeExportDropdown(); }}

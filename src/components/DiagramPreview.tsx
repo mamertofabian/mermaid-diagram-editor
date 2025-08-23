@@ -30,6 +30,7 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const [isPanningEnabled, setIsPanningEnabled] = useState(true);
+  const [lastTouchDistance, setLastTouchDistance] = useState(0);
 
   useEffect(() => {
     mermaid.initialize({
@@ -45,8 +46,16 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       if (!contentRef.current) return;
       
       try {
-        // Clear previous content
+        // Clear previous content and any error states
         contentRef.current.innerHTML = '';
+        
+        // Clear any lingering Mermaid state
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          securityLevel: 'loose',
+          logLevel: 'error',
+        });
         
         // Generate unique ID
         const id = `mermaid-${Math.random().toString(36).slice(2)}`;
@@ -62,13 +71,17 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
         setScrollPosition({ x: 0, y: 0 });
       } catch (error) {
         console.error('Mermaid rendering error:', error);
-        if (containerRef.current) {
-          containerRef.current.innerHTML = `
-            <div class="flex items-center justify-center h-full">
-              <p class="text-red-400 font-medium">Invalid Mermaid syntax</p>
-            </div>
-          `;
-        }
+        
+        // Clear any partial renders and show error in content area
+        contentRef.current.innerHTML = `
+          <div class="flex items-center justify-center h-full">
+            <p class="text-red-400 font-medium">Invalid Mermaid syntax</p>
+          </div>
+        `;
+        
+        // Reset zoom and scroll on error too
+        setZoomLevel(1);
+        setScrollPosition({ x: 0, y: 0 });
       }
     };
 
@@ -165,6 +178,19 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
     e.preventDefault();
   };
 
+  // Touch event handlers for mobile support
+  const getTouchDistance = (touches: TouchList) => {
+    if (touches.length < 2) return 0;
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    return Math.sqrt(
+      Math.pow(touch2.clientX - touch1.clientX, 2) + 
+      Math.pow(touch2.clientY - touch1.clientY, 2)
+    );
+  };
+
+
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const panStep = 20; // Pixels to move per key press
     
@@ -199,12 +225,54 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       setZoomLevel(prev => Math.max(0.5, Math.min(3, prev + delta)));
     };
 
+    const touchStartHandler = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        setIsDragging(true);
+        setDragStart({ x: touch.clientX - scrollPosition.x, y: touch.clientY - scrollPosition.y });
+      } else if (e.touches.length === 2) {
+        setIsDragging(false);
+        const distance = getTouchDistance(e.touches);
+        setLastTouchDistance(distance);
+      }
+    };
+
+    const touchMoveHandler = (e: TouchEvent) => {
+      e.preventDefault();
+      
+      if (e.touches.length === 1 && isDragging) {
+        const touch = e.touches[0];
+        const newX = touch.clientX - dragStart.x;
+        const newY = touch.clientY - dragStart.y;
+        setScrollPosition({ x: newX, y: newY });
+      } else if (e.touches.length === 2 && lastTouchDistance > 0) {
+        const currentDistance = getTouchDistance(e.touches);
+        const scale = currentDistance / lastTouchDistance;
+        const newZoom = zoomLevel * scale;
+        const clampedZoom = Math.max(0.5, Math.min(3, newZoom));
+        
+        setZoomLevel(clampedZoom);
+        setLastTouchDistance(currentDistance);
+      }
+    };
+
+    const touchEndHandler = () => {
+      setIsDragging(false);
+      setLastTouchDistance(0);
+    };
+
     element.addEventListener('wheel', wheelHandler, { passive: false });
+    element.addEventListener('touchstart', touchStartHandler, { passive: true });
+    element.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    element.addEventListener('touchend', touchEndHandler, { passive: true });
     
     return () => {
       element.removeEventListener('wheel', wheelHandler);
+      element.removeEventListener('touchstart', touchStartHandler);
+      element.removeEventListener('touchmove', touchMoveHandler);
+      element.removeEventListener('touchend', touchEndHandler);
     };
-  }, []);
+  }, [isDragging, dragStart, scrollPosition, lastTouchDistance, zoomLevel]);
 
 
   return (
@@ -214,8 +282,8 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
         flex flex-col
       `}
     >
-      {/* Controls */}
-      <div className="absolute top-4 right-4 flex gap-2 z-10">
+      {/* Controls - Desktop: top-right, Mobile: bottom bar */}
+      <div className="absolute top-4 right-4 hidden sm:flex gap-2 z-10">
         <ControlButtons
           isPanningEnabled={isPanningEnabled}
           onPanningToggle={() => setIsPanningEnabled(!isPanningEnabled)}
@@ -243,6 +311,42 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
           isFullScreen={isFullScreen}
           onFullScreenChange={onFullScreenChange}
         />
+      </div>
+
+      {/* Mobile Controls - Bottom bar with horizontal scroll */}
+      <div className="absolute bottom-2 left-2 right-2 sm:hidden bg-gray-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-gray-600 z-30 animate-in slide-in-from-bottom-2 duration-300">
+        <div className="flex gap-2 overflow-x-auto overflow-y-visible scrollbar-hide">
+          {/* All controls in one scrollable row */}
+          <div className="flex gap-2 flex-shrink-0 min-w-max">
+            <ControlButtons
+              isPanningEnabled={isPanningEnabled}
+              onPanningToggle={() => setIsPanningEnabled(!isPanningEnabled)}
+              theme={theme}
+              onThemeChange={toggleTheme}
+            />
+            
+            <ZoomControls
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onResetZoom={handleResetZoom}
+              onAutoFit={handleAutoFit}
+            />
+            
+            <ExportDropdown
+              contentRef={contentRef}
+              containerRef={containerRef}
+              theme={theme}
+              diagramCode={code}
+              diagramName={diagramName}
+              onAlert={onAlert}
+            />
+            
+            <FullScreenToggle
+              isFullScreen={isFullScreen}
+              onFullScreenChange={onFullScreenChange}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Diagram container */}

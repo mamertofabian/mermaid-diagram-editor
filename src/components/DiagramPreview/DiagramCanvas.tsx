@@ -32,11 +32,6 @@ export default function DiagramCanvas({
   return (
     <div 
       className="flex-1 overflow-hidden relative diagram-print-area"
-      style={{
-        backgroundColor: theme === 'light' ? '#ffffff' : '#f8fafc',
-        border: `2px solid ${theme === 'light' ? '#e5e7eb' : '#374151'}`,
-        userSelect: isPanningEnabled ? 'none' : 'text',
-      }}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
@@ -45,6 +40,14 @@ export default function DiagramCanvas({
       onKeyDown={onKeyDown}
       tabIndex={0}
       ref={containerRef}
+      style={{
+        ...{
+          backgroundColor: theme === 'light' ? '#ffffff' : '#f8fafc',
+          border: `2px solid ${theme === 'light' ? '#e5e7eb' : '#374151'}`,
+          userSelect: isPanningEnabled ? 'none' : 'text',
+        },
+        touchAction: 'none' // Disable browser touch behaviors
+      }}
     >
       <div
         ref={contentRef}

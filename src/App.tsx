@@ -421,10 +421,25 @@ function App() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div className="container mx-auto px-4 py-8 flex gap-4">
-        {/* Sidebar */}
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 flex gap-4 relative">
+        {/* Mobile Sidebar Overlay */}
         {showSidebar && (
-          <div className="w-80 bg-gray-800 rounded-xl shadow-xl p-4 flex flex-col h-[calc(100vh-4rem)]">
+          <>
+            {/* Mobile backdrop */}
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              onClick={toggleSidebar}
+            />
+            
+            {/* Sidebar */}
+            <div className={`
+              ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
+              fixed md:relative top-0 left-0 z-50 md:z-auto
+              w-80 md:w-80 
+              bg-gray-800 rounded-xl shadow-xl p-4 
+              flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]
+              transform transition-transform duration-300 ease-in-out md:transform-none
+            `}>
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold">My Diagrams</h2>
             </div>
@@ -458,31 +473,30 @@ function App() {
                 onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
               />
             </div>
-          </div>
+            </div>
+          </>
         )}
 
         {/* Main Content */}
         <div className="flex-1 bg-gray-800 rounded-xl shadow-xl overflow-hidden">
           <div className="border-b border-gray-700">
-            <div className="px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                {!showSidebar && (
-                  <button
-                    onClick={toggleSidebar}
-                    className="p-2 text-gray-300 hover:text-gray-100 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-                    title="Show List"
-                  >
-                    <List className="w-5 h-5" />
-                  </button>
-                )}
+            <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 text-gray-300 hover:text-gray-100 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                  title={showSidebar ? "Hide List" : "Show List"}
+                >
+                  <List className="w-5 h-5" />
+                </button>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
+                  <div className="hidden sm:block text-xs text-gray-400 mt-1">
                     Ctrl+C Copy • Ctrl+S Save • Ctrl+M New • Ctrl+E Toggle View • Esc Close
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 overflow-x-auto">
                 <button
                   onClick={handleCopyCode}
                   className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
@@ -520,7 +534,7 @@ function App() {
             </div>
           </div>
           
-          <div className="h-[calc(100vh-12rem)]">
+          <div className="h-[calc(100vh-10rem)] sm:h-[calc(100vh-12rem)]">
             {isPreview ? (
               <DiagramPreview 
                 code={currentDiagram.code}
