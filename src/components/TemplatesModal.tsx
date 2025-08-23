@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, FileText } from 'lucide-react';
-import { DIAGRAM_TEMPLATES, TEMPLATE_CATEGORIES, getTemplatesByCategory, type DiagramTemplate } from '../data/templates';
+import { TEMPLATE_CATEGORIES, getTemplatesByCategory, type DiagramTemplate } from '../data/templates';
 
 interface TemplatesModalProps {
   isOpen: boolean;

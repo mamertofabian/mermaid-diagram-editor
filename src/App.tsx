@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Code, Eye, List, FolderPlus, Copy, Check, FileText } from 'lucide-react';
 import CreateDiagramModal from './components/CreateDiagramModal';
 import TemplatesModal from './components/TemplatesModal';
@@ -348,8 +348,11 @@ function App() {
     }
   };
 
-  // Paste functionality for creating diagrams from clipboard
-  const handlePaste = async (e: ClipboardEvent) => {
+  // Paste functionality for creating diagrams from clipboard (only in Preview mode)
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
+    // Only handle paste for diagram creation when in Preview mode
+    if (!isPreview) return;
+    
     try {
       const clipboardText = e.clipboardData?.getData('text');
       if (!clipboardText) return;
@@ -373,7 +376,7 @@ function App() {
     } catch (error) {
       console.error('Failed to process pasted content:', error);
     }
-  };
+  }, [isPreview]);
 
   // Add paste event listener
   useEffect(() => {
@@ -381,7 +384,7 @@ function App() {
     return () => {
       document.removeEventListener('paste', handlePaste);
     };
-  }, []);
+  }, [isPreview, handlePaste]);
 
   // Handle escape key for closing modals/dropdowns
   const handleEscape = () => {
@@ -408,7 +411,8 @@ function App() {
     onNew: () => setShowCreateModal(true),
     onToggleView: toggleView,
     onEscape: handleEscape,
-    isModalOpen
+    isModalOpen,
+    isPreview
   });
 
   return (

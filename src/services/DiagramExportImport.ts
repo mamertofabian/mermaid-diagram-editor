@@ -11,6 +11,7 @@ export interface ImportResult {
   imported: number;
   errors: string[];
   duplicates: number;
+  diagrams?: Diagram[];
 }
 
 class DiagramExportImport {
@@ -94,7 +95,7 @@ class DiagramExportImport {
         errors,
         duplicates: 0,
         diagrams: validDiagrams
-      } as ImportResult & { diagrams: Diagram[] };
+      };
       
     } catch (error) {
       return {
@@ -127,7 +128,7 @@ class DiagramExportImport {
         errors: [],
         duplicates: 0,
         diagrams: [diagram]
-      } as ImportResult & { diagrams: Diagram[] };
+      };
       
     } catch (error) {
       return {
@@ -275,7 +276,7 @@ class DiagramExportImport {
     return {
       ...combinedResult,
       diagrams: allDiagrams
-    } as ImportResult & { diagrams: Diagram[] };
+    };
   }
   
   // Helper methods
@@ -283,19 +284,24 @@ class DiagramExportImport {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = (e) => reject(new Error('Failed to read file'));
+      reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
   }
   
-  private isValidDiagram(obj: any): obj is Diagram {
-    return obj &&
-           typeof obj.id === 'string' &&
-           typeof obj.name === 'string' &&
-           typeof obj.code === 'string' &&
-           typeof obj.theme === 'string' &&
-           typeof obj.createdAt === 'number' &&
-           typeof obj.updatedAt === 'number';
+  private isValidDiagram(obj: unknown): obj is Diagram {
+    if (!obj || typeof obj !== 'object' || obj === null) {
+      return false;
+    }
+    
+    const candidate = obj as Record<string, unknown>;
+    
+    return typeof candidate.id === 'string' &&
+           typeof candidate.name === 'string' &&
+           typeof candidate.code === 'string' &&
+           typeof candidate.theme === 'string' &&
+           typeof candidate.createdAt === 'number' &&
+           typeof candidate.updatedAt === 'number';
   }
 }
 

@@ -7,6 +7,7 @@ interface KeyboardShortcutsProps {
   onToggleView: () => void;
   onEscape: () => void;
   isModalOpen?: boolean;
+  isPreview?: boolean;
 }
 
 export const useKeyboardShortcuts = ({
@@ -15,7 +16,8 @@ export const useKeyboardShortcuts = ({
   onNew,
   onToggleView,
   onEscape,
-  isModalOpen = false
+  isModalOpen = false,
+  isPreview = true
 }: KeyboardShortcutsProps) => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -41,8 +43,8 @@ export const useKeyboardShortcuts = ({
       if (isCtrlOrCmd) {
         switch (event.key.toLowerCase()) {
           case 'c':
-            // Only override Ctrl+C if not in a text selection context
-            if (window.getSelection()?.toString() === '') {
+            // Only override Ctrl+C in Preview mode and if not in a text selection context
+            if (isPreview && window.getSelection()?.toString() === '') {
               event.preventDefault();
               onCopy();
             }
@@ -70,5 +72,5 @@ export const useKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onSave, onNew, onToggleView, onEscape, isModalOpen]);
+  }, [onCopy, onSave, onNew, onToggleView, onEscape, isModalOpen, isPreview]);
 };
