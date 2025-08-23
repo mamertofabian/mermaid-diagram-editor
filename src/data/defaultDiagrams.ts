@@ -80,7 +80,7 @@ export const TUTORIAL_DIAGRAM: Diagram = {
     Beginner --> FlowBasic
     
     subgraph FlowSyntax [📝 Flowchart Syntax]
-        FS1["flowchart TD<br/>    Start[Begin Process]<br/>    Decision{Is Valid?}<br/>    Process[Do Something]<br/>    End[Finish]<br/><br/>    Start --> Decision<br/>    Decision -->|Yes| Process<br/>    Decision -->|No| End<br/>    Process --> End"]
+        FS1["flowchart TD<br/>    🚀 Start[Begin Process]<br/>    📋 Decision{Is Valid?}<br/>    ✅ Process[Do Something]<br/>    ❌ Error[Show Error]<br/>    🏁 End[Finish]<br/><br/>    🚀 Start --> 📋 Decision<br/>    📋 Decision -->|Yes| ✅ Process<br/>    📋 Decision -->|No| ❌ Error<br/>    ✅ Process --> 🏁 End<br/>    ❌ Error --> 🏁 End"]
     end
     
     FlowBasic --> FlowSyntax
@@ -110,7 +110,7 @@ export const TUTORIAL_DIAGRAM: Diagram = {
     Intermediate --> SeqDiagram
     
     subgraph SeqSyntax [📝 Sequence Syntax]
-        SS1["sequenceDiagram<br/>    participant U as User<br/>    participant S as Server<br/>    participant DB as Database<br/><br/>    U->>S: Login Request<br/>    S->>DB: Check User<br/>    DB-->>S: User Data<br/>    S-->>U: Login Success<br/><br/>    Note over S: Processing<br/>    Note right of U: User waits"]
+        SS1["sequenceDiagram<br/>    participant U as 👤 User<br/>    participant A as 💻 API<br/>    participant D as 🗄️ Database<br/>    participant R as 📨 Response<br/><br/>    U->>A: Send Request<br/>    A->>D: Query Database<br/>    D-->>A: Return Data<br/>    A-->>R: Process Response<br/>    R-->>U: Show Result"]
     end
     
     SeqDiagram --> SeqSyntax
@@ -121,11 +121,11 @@ export const TUTORIAL_DIAGRAM: Diagram = {
         SE_DB[🗄️ Database]
         SE_Response[📨 Response]
         
-        SE_User -.-> SE_API
-        SE_API -.-> SE_DB
-        SE_DB -.-> SE_API  
-        SE_API -.-> SE_Response
-        SE_Response -.-> SE_User
+        SE_User --> SE_API
+        SE_API --> SE_DB
+        SE_DB --> SE_API  
+        SE_API --> SE_Response
+        SE_Response --> SE_User
     end
     
     SeqSyntax --> SeqExample
@@ -135,7 +135,7 @@ export const TUTORIAL_DIAGRAM: Diagram = {
     Intermediate --> ClassDiagram
     
     subgraph ClassSyntax [📝 Class Syntax]
-        CS1["classDiagram<br/>    class Animal {<br/>        +String name<br/>        +int age<br/>        +makeSound()<br/>        +move()<br/>    }<br/>    class Dog {<br/>        +String breed<br/>        +bark()<br/>    }<br/>    class Cat {<br/>        +bool indoor<br/>        +meow()<br/>    }<br/><br/>    Animal <|-- Dog<br/>    Animal <|-- Cat"]
+        CS1["classDiagram<br/>    class 🐾 Animal {<br/>        +String name<br/>        +int age<br/>        +makeSound()<br/>        +move()<br/>    }<br/>    class 🐕 Dog {<br/>        +String breed<br/>        +bark()<br/>    }<br/>    class 🐱 Cat {<br/>        +bool indoor<br/>        +meow()<br/>    }<br/><br/>    🐾 Animal --> 🐕 Dog<br/>    🐾 Animal --> 🐱 Cat"]
     end
     
     ClassDiagram --> ClassSyntax
@@ -156,7 +156,7 @@ export const TUTORIAL_DIAGRAM: Diagram = {
     Advanced --> StateDiagram
     
     subgraph StateSyntax [📝 State Syntax]
-        STS1["stateDiagram-v2<br/>    [*] --> Idle<br/>    Idle --> Loading : start<br/>    Loading --> Active : success<br/>    Loading --> Error : failure<br/>    Active --> Idle : reset<br/>    Error --> Idle : retry<br/>    Active --> [*] : complete"]
+        STS1["stateDiagram-v2<br/>    [*] --> 🟡 Idle<br/>    🟡 Idle --> 🔄 Loading : start<br/>    🔄 Loading --> 🟢 Active : success<br/>    🔄 Loading --> 🔴 Error : failure<br/>    🟢 Active --> 🟡 Idle : reset<br/>    🔴 Error --> 🟡 Idle : retry<br/>    🟢 Active --> [*] : complete"]
     end
     
     StateDiagram --> StateSyntax
@@ -167,11 +167,12 @@ export const TUTORIAL_DIAGRAM: Diagram = {
         STE_Active[🟢 Active] 
         STE_Error[🔴 Error]
         
-        STE_Idle --> STE_Loading
-        STE_Loading --> STE_Active
-        STE_Loading --> STE_Error
-        STE_Active --> STE_Idle
-        STE_Error --> STE_Idle
+        STE_Idle -->|start| STE_Loading
+        STE_Loading -->|success| STE_Active
+        STE_Loading -->|failure| STE_Error
+        STE_Active -->|reset| STE_Idle
+        STE_Error -->|retry| STE_Idle
+        STE_Active -->|complete| STE_End[🏁 End]
     end
     
     StateSyntax --> StateExample
@@ -181,7 +182,7 @@ export const TUTORIAL_DIAGRAM: Diagram = {
     Advanced --> ERDiagram
     
     subgraph ERSyntax [📝 ER Syntax]
-        ERS1["erDiagram<br/>    USER {<br/>        int id PK<br/>        string email<br/>        string name<br/>        date created_at<br/>    }<br/>    ORDER {<br/>        int id PK<br/>        int user_id FK<br/>        decimal total<br/>        date order_date<br/>    }<br/>    PRODUCT {<br/>        int id PK<br/>        string name<br/>        decimal price<br/>    }<br/><br/>    USER ||--o{ ORDER : places<br/>    ORDER }o--o{ PRODUCT : contains"]
+        ERS1["erDiagram<br/>    👤 USER {<br/>        🔑 int id PK<br/>        📧 string email<br/>        👤 string name<br/>    }<br/>    📦 ORDER {<br/>        🔑 int id PK<br/>        🔗 int user_id FK<br/>        💰 decimal total<br/>    }<br/>    📋 PRODUCT {<br/>        🔑 int id PK<br/>        📝 string name<br/>        💵 decimal price<br/>    }<br/><br/>    👤 USER --> 📦 ORDER<br/>    📦 ORDER --> 📋 PRODUCT"]
     end
     
     ERDiagram --> ERSyntax
@@ -202,17 +203,17 @@ export const TUTORIAL_DIAGRAM: Diagram = {
     Advanced --> GitGraph
     
     subgraph GitSyntax [📝 Git Syntax]
-        GS1["gitGraph<br/>    commit id: 'Initial'<br/>    commit id: 'Add feature'<br/>    branch develop<br/>    checkout develop<br/>    commit id: 'Dev work'<br/>    commit id: 'Bug fix'<br/>    checkout main<br/>    merge develop<br/>    commit id: 'Release'"]
+        GS1["gitGraph<br/>    commit id: '🚀 Initial'<br/>    commit id: '✨ Feature'<br/>    branch develop<br/>    checkout develop<br/>    commit id: '🔧 Develop'<br/>    commit id: '🔀 Merge'<br/>    checkout main<br/>    merge develop<br/>    commit id: '🚀 Release'"]
     end
     
     GitGraph --> GitSyntax
     
     subgraph GitExample [🎨 Live Git Example]
-        GE_Initial((Initial))
-        GE_Feature((Feature))
-        GE_Develop((Develop))
-        GE_Merge((Merge))
-        GE_Release((Release))
+        GE_Initial((🚀 Initial))
+        GE_Feature((✨ Feature))
+        GE_Develop((🔧 Develop))
+        GE_Merge((🔀 Merge))
+        GE_Release((🚀 Release))
         
         GE_Initial --> GE_Feature
         GE_Feature --> GE_Develop
@@ -228,11 +229,11 @@ export const TUTORIAL_DIAGRAM: Diagram = {
     Practice --> Templates
     
     subgraph PracticeExamples [🏗️ Copy & Use These Examples]
-        PE1["🌐 Simple Website Flow:<br/>flowchart TD<br/>    A[Home Page] --> B{User Login?}<br/>    B -->|Yes| C[Dashboard]<br/>    B -->|No| D[Login Page]<br/>    D --> E[Authenticate]<br/>    E --> C"]
+        PE1["🌐 Simple Website Flow:<br/>flowchart TD<br/>    🏠 A[Home Page] --> 🔐 B{User Login?}<br/>    🔐 B -->|Yes| 📊 C[Dashboard]<br/>    🔐 B -->|No| 🔑 D[Login Page]<br/>    🔑 D --> ✅ E[Authenticate]<br/>    ✅ E --> 📊 C"]
         
-        PE2["📊 API Call Flow:<br/>sequenceDiagram<br/>    participant C as Client<br/>    participant A as API<br/>    participant D as Database<br/>    C->>A: POST /users<br/>    A->>D: INSERT user<br/>    D-->>A: Success<br/>    A-->>C: 201 Created"]
+        PE2["📊 API Call Flow:<br/>sequenceDiagram<br/>    participant C as 💻 Client<br/>    participant A as 🔌 API<br/>    participant D as 🗄️ Database<br/>    💻 C->>🔌 A: POST /users<br/>    🔌 A->>🗄️ D: INSERT user<br/>    🗄️ D-->>🔌 A: Success<br/>    🔌 A-->>💻 C: 201 Created"]
         
-        PE3["🏗️ Simple Class:<br/>classDiagram<br/>    class User {<br/>        +string email<br/>        +string password<br/>        +login()<br/>        +logout()<br/>    }"]
+        PE3["🏗️ Simple Class:<br/>classDiagram<br/>    class 👤 User {<br/>        +string email<br/>        +string password<br/>        +login()<br/>        +logout()<br/>    }"]
     end
     
     Templates --> PracticeExamples
