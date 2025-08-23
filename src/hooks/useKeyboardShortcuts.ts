@@ -6,6 +6,7 @@ interface KeyboardShortcutsProps {
   onNew: () => void;
   onToggleView: () => void;
   onEscape: () => void;
+  onHelp?: () => void;
   isModalOpen?: boolean;
   isPreview?: boolean;
 }
@@ -16,6 +17,7 @@ export const useKeyboardShortcuts = ({
   onNew,
   onToggleView,
   onEscape,
+  onHelp,
   isModalOpen = false,
   isPreview = true
 }: KeyboardShortcutsProps) => {
@@ -31,6 +33,13 @@ export const useKeyboardShortcuts = ({
       if (event.key === 'Escape') {
         event.preventDefault();
         onEscape();
+        return;
+      }
+      
+      // Handle ? key for help (always active)
+      if (event.key === '?' && onHelp) {
+        event.preventDefault();
+        onHelp();
         return;
       }
       
@@ -72,5 +81,5 @@ export const useKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onSave, onNew, onToggleView, onEscape, isModalOpen, isPreview]);
+  }, [onCopy, onSave, onNew, onToggleView, onEscape, onHelp, isModalOpen, isPreview]);
 };

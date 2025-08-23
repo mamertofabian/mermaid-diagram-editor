@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Code, Eye, List, FolderPlus, Copy, Check, FileText } from 'lucide-react';
+import { Code, Eye, List, FolderPlus, Copy, Check, FileText, HelpCircle } from 'lucide-react';
 import CreateDiagramModal from './components/CreateDiagramModal';
 import TemplatesModal from './components/TemplatesModal';
+import HelpModal from './components/HelpModal';
 import AlertModal from './components/AlertModal';
 import ConfirmModal from './components/ConfirmModal';
 import PromptModal from './components/PromptModal';
@@ -26,6 +27,7 @@ function App() {
 
   // Modal states
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
     message: string;
@@ -368,11 +370,13 @@ function App() {
       setShowCreateModal(false);
     } else if (showTemplatesModal) {
       setShowTemplatesModal(false);
+    } else if (showHelpModal) {
+      setShowHelpModal(false);
     }
   };
 
   // Check if any modal is open
-  const isModalOpen = alertModal.isOpen || confirmModal.isOpen || promptModal.isOpen || showCreateModal || showTemplatesModal;
+  const isModalOpen = alertModal.isOpen || confirmModal.isOpen || promptModal.isOpen || showCreateModal || showTemplatesModal || showHelpModal;
 
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
@@ -381,6 +385,7 @@ function App() {
     onNew: () => setShowCreateModal(true),
     onToggleView: toggleView,
     onEscape: handleEscape,
+    onHelp: useCallback(() => setShowHelpModal(true), []),
     isModalOpen,
     isPreview
   });
@@ -454,8 +459,8 @@ function App() {
         {/* Main Content */}
         <div className="flex-1 bg-gray-800 rounded-xl shadow-xl overflow-hidden">
           <div className="border-b border-gray-700">
-            <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-              <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0">
+              <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
                 <button
                   onClick={toggleSidebar}
                   className="p-2 text-gray-300 hover:text-gray-100 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
@@ -463,46 +468,55 @@ function App() {
                 >
                   <List className="w-5 h-5" />
                 </button>
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Mermaid Diagram Viewer</h1>
-                  <div className="hidden sm:block text-xs text-gray-400 mt-1">
-                    Ctrl+C Copy • Ctrl+S Save • Ctrl+M New • Ctrl+E Toggle View • Esc Close
-                  </div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-xl font-bold text-gray-100 truncate" title={currentDiagram.name}>
+                    {currentDiagram.id === WELCOME_DIAGRAM.id ? 'Welcome Guide' : 
+                     currentDiagram.id === TUTORIAL_DIAGRAM.id ? 'Mermaid Tutorial' : 
+                     currentDiagram.name}
+                  </h1>
                 </div>
               </div>
-              <div className="flex space-x-2 overflow-x-auto">
+              <div className="flex space-x-2 overflow-x-auto flex-shrink-0">
                 <button
                   onClick={handleCopyCode}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
                   title="Copy diagram code to clipboard"
                 >
                   {copySuccess ? (
                     <>
-                      <Check className="w-4 h-4 mr-2 text-green-400" />
-                      Copied!
+                      <Check className="w-4 h-4 mr-1 text-green-400" />
+                      <span className="hidden sm:inline">Copied!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy Code
+                      <Copy className="w-4 h-4 mr-1" />
+                      <span className="hidden sm:inline">Copy Code</span>
                     </>
                   )}
                 </button>
                 <button
                   onClick={toggleView}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
                 >
                   {isPreview ? (
                     <>
-                      <Code className="w-4 h-4 mr-2" />
-                      Show Code
+                      <Code className="w-4 h-4 mr-1" />
+                      <span className="hidden sm:inline">Show Code</span>
                     </>
                   ) : (
                     <>
-                      <Eye className="w-4 h-4 mr-2" />
-                      Preview
+                      <Eye className="w-4 h-4 mr-1" />
+                      <span className="hidden sm:inline">Preview</span>
                     </>
                   )}
+                </button>
+                <button
+                  onClick={() => setShowHelpModal(true)}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+                  title="Keyboard Shortcuts (?)"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">Help</span>
                 </button>
               </div>
             </div>
@@ -544,6 +558,11 @@ function App() {
         isOpen={showTemplatesModal}
         onClose={() => setShowTemplatesModal(false)}
         onSelectTemplate={handleSelectTemplate}
+      />
+      
+      <HelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
       />
 
       {/* Custom Modals */}
