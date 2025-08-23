@@ -8,22 +8,26 @@
   </defs>
   
   <!-- Background circle -->
-  <circle cx="50" cy="50" r="48" fill="url(#gradient1)" stroke="#1e293b" stroke-width="2"/>
+  <circle cx="50" cy="50" r="48" fill="url(#gradient1)" stroke="#ffffff" stroke-width="3"/>
   
-  <!-- Mermaid tail -->
-  <path d="M30 65 Q35 70 45 65 Q50 60 45 55 Q35 50 30 55 Z" fill="#ffffff" opacity="0.9"/>
-  <path d="M25 70 Q30 75 40 70 Q45 65 40 60 Q30 55 25 60 Z" fill="#ffffff" opacity="0.7"/>
+  <!-- Simple flowchart design -->
+  <!-- Start node -->
+  <rect x="30" y="20" width="40" height="12" rx="6" fill="#ffffff" opacity="0.95"/>
   
-  <!-- Flowchart nodes -->
-  <rect x="35" y="25" width="15" height="8" rx="2" fill="#ffffff" opacity="0.95"/>
-  <rect x="55" y="35" width="15" height="8" rx="2" fill="#ffffff" opacity="0.95"/>
-  <rect x="35" y="45" width="15" height="8" rx="2" fill="#ffffff" opacity="0.95"/>
+  <!-- Decision node (diamond shape) -->
+  <polygon points="50,40 65,50 50,60 35,50" fill="#ffffff" opacity="0.95"/>
+  
+  <!-- End nodes -->
+  <rect x="15" y="70" width="25" height="10" rx="5" fill="#ffffff" opacity="0.95"/>
+  <rect x="60" y="70" width="25" height="10" rx="5" fill="#ffffff" opacity="0.95"/>
   
   <!-- Connection lines -->
-  <line x1="50" y1="29" x2="55" y2="39" stroke="#ffffff" stroke-width="2" opacity="0.8"/>
-  <line x1="62" y1="43" x2="50" y2="49" stroke="#ffffff" stroke-width="2" opacity="0.8"/>
+  <line x1="50" y1="32" x2="50" y2="40" stroke="#ffffff" stroke-width="2.5" opacity="0.9"/>
+  <line x1="35" y1="50" x2="27" y2="70" stroke="#ffffff" stroke-width="2.5" opacity="0.9"/>
+  <line x1="65" y1="50" x2="73" y2="70" stroke="#ffffff" stroke-width="2.5" opacity="0.9"/>
   
-  <!-- Arrows -->
-  <polygon points="54,38 56,36 56,40" fill="#ffffff" opacity="0.8"/>
-  <polygon points="51,48 49,46 49,50" fill="#ffffff" opacity="0.8"/>
+  <!-- Arrow heads -->
+  <polygon points="50,38 48,35 52,35" fill="#ffffff" opacity="0.9"/>
+  <polygon points="29,68 26,65 32,65" fill="#ffffff" opacity="0.9"/>
+  <polygon points="75,68 72,65 78,65" fill="#ffffff" opacity="0.9"/>
 </svg>
