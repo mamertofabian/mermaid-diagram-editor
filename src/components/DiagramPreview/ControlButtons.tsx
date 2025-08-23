@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface ControlButtonsProps {
   isPanningEnabled: boolean;
   onPanningToggle: () => void;

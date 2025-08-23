@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { ChevronUp, ChevronDown } from 'lucide-react';
 import '../print.css';
 import ExportDropdown from './DiagramPreview/ExportDropdown';
 import ZoomControls from './DiagramPreview/ZoomControls';
@@ -42,7 +41,6 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const [isPanningEnabled, setIsPanningEnabled] = useState(true);
   const [lastTouchDistance, setLastTouchDistance] = useState(0);
-  const [showSecondRow, setShowSecondRow] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -596,107 +594,90 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
         />
       </div>
 
-      {/* Mobile Controls - 2-row layout with toggle */}
+      {/* Mobile Controls - Flexible layout with wrapping */}
       <div className="absolute bottom-2 left-2 right-2 sm:hidden bg-gray-800/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-gray-600 z-30 animate-in slide-in-from-bottom-2 duration-300">
-        {/* First Row - Core Controls */}
-        <div className={`flex gap-2 justify-between items-center ${showSecondRow ? 'mb-2' : 'mb-0'} transition-all duration-300`}>
-          <div className="flex gap-2">
-            <ControlButtons
-              isPanningEnabled={isPanningEnabled}
-              onPanningToggle={() => setIsPanningEnabled(!isPanningEnabled)}
-              theme={theme}
-              onThemeChange={toggleTheme}
-            />
-            
-            <ZoomControls
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
-              onResetZoom={handleResetZoom}
-              onAutoFit={handleAutoFit}
-              onMaxZoom={handleMaxZoom}
-              zoomLevel={zoomLevel}
-            />
-            
-            <FullScreenToggle
-              isFullScreen={isFullScreen}
-              onFullScreenChange={onFullScreenChange}
-            />
-          </div>
+        {/* All Controls - Allow wrapping to multiple rows */}
+        <div className="flex flex-wrap gap-2 justify-center items-center">
+          <ControlButtons
+            isPanningEnabled={isPanningEnabled}
+            onPanningToggle={() => setIsPanningEnabled(!isPanningEnabled)}
+            theme={theme}
+            onThemeChange={toggleTheme}
+          />
           
-          {/* Row toggle button */}
+          <ZoomControls
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onResetZoom={handleResetZoom}
+            onAutoFit={handleAutoFit}
+            onMaxZoom={handleMaxZoom}
+            zoomLevel={zoomLevel}
+          />
+          
+          <FullScreenToggle
+            isFullScreen={isFullScreen}
+            onFullScreenChange={onFullScreenChange}
+          />
+          
+          {/* Export Options - Always visible, no toggle needed */}
           <button
-            onClick={() => setShowSecondRow(!showSecondRow)}
-            className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] w-[40px] flex items-center justify-center transition-all duration-300"
-            title={showSecondRow ? "Hide Export Options" : "Show Export Options"}
+            onClick={exportToPDF}
+            disabled={isExporting}
+            className={`bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors min-w-[80px] ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title="Export to PDF"
           >
-            {showSecondRow ? (
-              <ChevronDown className="w-4 h-4" />
-            ) : (
-              <ChevronUp className="w-4 h-4" />
-            )}
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10,9 9,9 8,9"/>
+            </svg>
+            <span className="ml-1 text-xs font-medium">PDF</span>
           </button>
-        </div>
-        
-        {/* Second Row - Export Options */}
-        <div className={`
-          ${showSecondRow ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}
-          overflow-hidden transition-all duration-300 ease-out
-        `}>
-          <div className="flex gap-2 justify-center">
-            <button
-              onClick={exportToPDF}
-              disabled={isExporting}
-              className={`bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors flex-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title="Export to PDF"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14,2 14,8 20,8"/>
-              </svg>
-              <span className="ml-1 text-xs font-medium">PDF</span>
-            </button>
-            
-            <button
-              onClick={exportToPNG}
-              disabled={isExporting}
-              className={`bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors flex-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title="Export to PNG"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21,15 16,10 5,21"/>
-              </svg>
-              <span className="ml-1 text-xs font-medium">PNG</span>
-            </button>
-            
-            <button
-              onClick={exportToSVG}
-              disabled={isExporting}
-              className={`bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors flex-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title="Export to SVG"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14,2 14,8 20,8"/>
-              </svg>
-              <span className="ml-1 text-xs font-medium">SVG</span>
-            </button>
-            
-            <button
-              onClick={exportToMmd}
-              disabled={isExporting}
-              className={`bg-purple-600 hover:bg-purple-700 text-white rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors flex-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title="Export as .mmd file"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14,2 14,8 20,8"/>
-                <path d="M12 17V7m0 10l-3-3m3 3l3-3"/>
-              </svg>
-              <span className="ml-1 text-xs font-medium">MMD</span>
-            </button>
-          </div>
+          
+          <button
+            onClick={exportToPNG}
+            disabled={isExporting}
+            className={`bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors min-w-[80px] ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title="Export to PNG"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21,15 16,10 5,21"/>
+            </svg>
+            <span className="ml-1 text-xs font-medium">PNG</span>
+          </button>
+          
+          <button
+            onClick={exportToSVG}
+            disabled={isExporting}
+            className={`bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors min-w-[80px] ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title="Export to SVG"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <path d="M9 15h6"/>
+              <path d="M9 11h6"/>
+            </svg>
+            <span className="ml-1 text-xs font-medium">SVG</span>
+          </button>
+          
+          <button
+            onClick={exportToMmd}
+            disabled={isExporting}
+            className={`bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md h-[40px] flex items-center justify-center transition-colors min-w-[80px] ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title="Export as .mmd file"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+              <path d="M12 17V7m0 10l-3-3m3 3l3-3"/>
+            </svg>
+            <span className="ml-1 text-xs font-medium">MMD</span>
+          </button>
         </div>
       </div>
 

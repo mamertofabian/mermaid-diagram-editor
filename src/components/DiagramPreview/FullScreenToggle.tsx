@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface FullScreenToggleProps {
   isFullScreen: boolean;
   onFullScreenChange?: (isFullScreen: boolean) => void;
