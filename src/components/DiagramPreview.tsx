@@ -3,11 +3,13 @@ import mermaid from 'mermaid';
 
 interface DiagramPreviewProps {
   code: string;
+  theme: 'light' | 'dark';
+  onThemeChange: (theme: 'light' | 'dark') => void;
   isFullScreen: boolean;
   onFullScreenChange?: (isFullScreen: boolean) => void;
 }
 
-export default function DiagramPreview({ code, isFullScreen, onFullScreenChange }: DiagramPreviewProps) {
+export default function DiagramPreview({ code, theme, onThemeChange, isFullScreen, onFullScreenChange }: DiagramPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -18,11 +20,11 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
-      theme: 'default',
+      theme: theme,
       securityLevel: 'loose',
       logLevel: 'error',
     });
-  }, []);
+  }, [theme]);
 
   useEffect(() => {
     const renderDiagram = async () => {
@@ -57,7 +59,12 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
     };
 
     renderDiagram();
-  }, [code]);
+  }, [code, theme]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    onThemeChange(newTheme);
+  };
 
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 0.1, 3));
@@ -91,13 +98,7 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
     setIsDragging(false);
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomSensitivity = 0.001;
-    const delta = -e.deltaY * zoomSensitivity;
-    const newZoom = Math.max(0.5, Math.min(3, zoomLevel + delta));
-    setZoomLevel(newZoom);
-  };
+
 
   useEffect(() => {
     const element = containerRef.current;
@@ -126,6 +127,29 @@ export default function DiagramPreview({ code, isFullScreen, onFullScreenChange 
     >
       {/* Controls */}
       <div className="absolute top-4 right-4 flex gap-2 z-10">
+        <button
+          onClick={toggleTheme}
+          className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"
+          title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Theme`}
+        >
+          {theme === 'light' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          )}
+        </button>
         <button
           onClick={handleZoomIn}
           className="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg p-2 shadow-md"

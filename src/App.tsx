@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Code, Eye, Plus, List, FolderPlus } from 'lucide-react';
+import { Code, Eye, List, FolderPlus } from 'lucide-react';
 import CreateDiagramModal from './components/CreateDiagramModal';
 import { diagramStorage, type Diagram } from './services/DiagramStorage';
 import Editor from './components/Editor';
@@ -29,6 +29,7 @@ const DEFAULT_DIAGRAM = {
     style Preview fill:#bbf,stroke:#333
     style Edit fill:#bfb,stroke:#333
     style Create fill:#fbf,stroke:#333`,
+  theme: 'light' as const,
   createdAt: Date.now(),
   updatedAt: Date.now(),
 };
@@ -42,11 +43,15 @@ function App() {
 
   useEffect(() => {
     const stored = diagramStorage.getAllDiagrams();
-    setDiagrams(stored);
+    // Add theme property to existing diagrams for backward compatibility
+    const diagramsWithTheme = stored.map(diagram => ({
+      ...diagram,
+      theme: diagram.theme || 'light'
+    }));
+    setDiagrams(diagramsWithTheme);
   }, []);
 
   const toggleView = () => setIsPreview(!isPreview);
-  const toggleFullScreen = () => setIsFullScreen(!isFullScreen);
   const toggleSidebar = () => setShowSidebar(!showSidebar);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -92,6 +97,16 @@ function App() {
     // Save changes to storage immediately
     const updated = diagramStorage.updateDiagram(currentDiagram.id, {
       code: code
+    });
+    setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
+  };
+
+  const handleThemeChange = (theme: 'light' | 'dark') => {
+    setCurrentDiagram(prev => ({ ...prev, theme }));
+    
+    // Save theme change to storage immediately
+    const updated = diagramStorage.updateDiagram(currentDiagram.id, {
+      theme: theme
     });
     setDiagrams(diagrams.map(d => d.id === updated.id ? updated : d));
   };
@@ -162,7 +177,9 @@ function App() {
           <div className="h-[calc(100vh-12rem)]">
             {isPreview ? (
               <DiagramPreview 
-                code={currentDiagram.code} 
+                code={currentDiagram.code}
+                theme={currentDiagram.theme}
+                onThemeChange={handleThemeChange}
                 isFullScreen={isFullScreen} 
                 onFullScreenChange={setIsFullScreen}
               />

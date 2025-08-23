@@ -2,6 +2,7 @@ export interface Diagram {
   id: string;
   name: string;
   code: string;
+  theme: 'light' | 'dark';
   createdAt: number;
   updatedAt: number;
 }
@@ -20,6 +21,7 @@ class DiagramStorage {
       id: crypto.randomUUID(),
       name,
       code,
+      theme: 'light', // Default to light theme for better readability
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
