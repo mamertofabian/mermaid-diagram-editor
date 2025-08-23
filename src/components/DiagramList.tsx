@@ -1,8 +1,10 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Diagram, Collection } from '../services/DiagramStorage';
-import { Pencil, Trash2, Download, Upload, Share, FileDown, HelpCircle, Info, ExternalLink, Calendar, Youtube, Github, BookOpen, FolderPlus } from 'lucide-react';
+import { Download, Upload, HelpCircle, Info, ExternalLink, Calendar, Youtube, Github, BookOpen, Plus, Search, ChevronDown, ChevronRight, X, Edit3, Trash2 } from 'lucide-react';
 import { diagramExportImport } from '../services/DiagramExportImport';
 import CollectionBadge from './CollectionBadge';
+import DiagramDropdown from './DiagramDropdown';
+import * as LucideIcons from 'lucide-react';
 
 interface DiagramListProps {
   diagrams: Diagram[];
@@ -20,6 +22,9 @@ interface DiagramListProps {
   onShowTutorial: () => void;
   onAddToCollection: (diagramId: string, collectionId: string) => void;
   onRemoveFromCollection: (diagramId: string, collectionId: string) => void;
+  onCreateCollection: () => void;
+  onEditCollection: (collection: Collection) => void;
+  onDeleteCollection: (collection: Collection) => void;
 }
 
 export default function DiagramList({ 
@@ -37,25 +42,64 @@ export default function DiagramList({
   onShowWelcome, 
   onShowTutorial,
   onAddToCollection,
-  onRemoveFromCollection 
+  onRemoveFromCollection,
+  onCreateCollection,
+  onEditCollection,
+  onDeleteCollection
 }: DiagramListProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showCollectionMenu, setShowCollectionMenu] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
 
-  // Close collection menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showCollectionMenu) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('.collection-menu-container')) {
-          setShowCollectionMenu(null);
-        }
-      }
+  // Group diagrams by collections and uncategorized
+  const { collectionsWithDiagrams, uncategorizedDiagrams } = useMemo(() => {
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Filter collections by search
+    const filtered = collections.filter(collection =>
+      collection.name.toLowerCase().includes(searchLower) ||
+      collection.description?.toLowerCase().includes(searchLower)
+    );
+
+    // Get diagrams for collections (only visible if collection matches search or diagram matches search)
+    const collectionsWithDiagrams = filtered.map(collection => {
+      const collectionDiagrams = collection.diagramIds
+        .map(id => diagrams.find(d => d.id === id))
+        .filter(Boolean)
+        .filter(diagram => 
+          searchTerm === '' || 
+          diagram!.name.toLowerCase().includes(searchLower) ||
+          collection.name.toLowerCase().includes(searchLower)
+        ) as Diagram[];
+
+      return {
+        collection,
+        diagrams: collectionDiagrams
+      };
+    }).filter(item => item.diagrams.length > 0 || collection.name.toLowerCase().includes(searchLower));
+
+    // Get uncategorized diagrams (not in any collection)
+    const uncategorized = diagrams.filter(diagram => 
+      (!diagram.collectionIds || diagram.collectionIds.length === 0) &&
+      (searchTerm === '' || diagram.name.toLowerCase().includes(searchLower))
+    );
+
+    return {
+      collectionsWithDiagrams,
+      uncategorizedDiagrams: uncategorized
     };
+  }, [diagrams, collections, searchTerm]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showCollectionMenu]);
+  // Toggle collection expansion
+  const toggleCollection = (collectionId: string) => {
+    const newExpanded = new Set(expandedCollections);
+    if (newExpanded.has(collectionId)) {
+      newExpanded.delete(collectionId);
+    } else {
+      newExpanded.add(collectionId);
+    }
+    setExpandedCollections(newExpanded);
+  };
 
   const handleExportAll = () => {
     diagramExportImport.exportAllAsJSON(diagrams);
@@ -92,198 +136,309 @@ export default function DiagramList({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Import/Export Controls */}
-      <div className="flex gap-2 pb-2 border-b border-gray-600 flex-shrink-0">
-        <button
-          onClick={handleImportClick}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-          title="Import Diagrams"
-        >
-          <Upload className="w-4 h-4" />
-          Import
-        </button>
-        <button
-          onClick={handleExportAll}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-          title="Export All Diagrams"
-          disabled={diagrams.length === 0}
-        >
-          <Download className="w-4 h-4" />
-          Export All
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json,.mmd"
-          multiple
-          onChange={handleFileSelect}
-          className="hidden"
-        />
+      {/* Header with Search and Controls */}
+      <div className="flex-shrink-0 space-y-3 pb-3 border-b border-gray-600">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search diagrams and collections..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-8 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Import/Export Controls */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleImportClick}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+            title="Import Diagrams"
+          >
+            <Upload className="w-4 h-4" />
+            Import
+          </button>
+          <button
+            onClick={handleExportAll}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+            title="Export All Diagrams"
+            disabled={diagrams.length === 0}
+          >
+            <Download className="w-4 h-4" />
+            Export All
+          </button>
+          <button
+            onClick={onCreateCollection}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white bg-purple-700 rounded-lg hover:bg-purple-600 transition-colors"
+            title="Create New Collection"
+          >
+            <Plus className="w-4 h-4" />
+            Collection
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.mmd"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+        </div>
       </div>
 
-      {/* Diagram List - Scrollable */}
+      {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto min-h-0 py-2">
-        <div className="space-y-2">
-          {diagrams.length === 0 ? (
+        <div className="space-y-1">
+          {/* Collections */}
+          {collectionsWithDiagrams.map(({ collection, diagrams: collectionDiagrams }) => {
+            const isExpanded = expandedCollections.has(collection.id);
+            const iconName = (collection.icon?.split('-').map(word => 
+              word.charAt(0).toUpperCase() + word.slice(1)).join('') || 'Folder') as keyof typeof LucideIcons;
+            const IconComponent = LucideIcons[iconName] || LucideIcons.Folder;
+
+            return (
+              <div key={collection.id} className="border border-gray-600 rounded-lg">
+                {/* Collection Header */}
+                <div
+                  className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-700 transition-colors"
+                  onClick={() => toggleCollection(collection.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <button className="text-gray-400">
+                      {isExpanded ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </button>
+                    
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: collection.color + '20',
+                        border: `1px solid ${collection.color}40`
+                      }}
+                    >
+                      <IconComponent 
+                        className="w-4 h-4" 
+                        style={{ color: collection.color }} 
+                      />
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-medium text-gray-100">{collection.name}</h3>
+                      <p className="text-sm text-gray-400">
+                        {collectionDiagrams.length} diagram{collectionDiagrams.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditCollection(collection);
+                      }}
+                      className="text-gray-400 hover:text-gray-200 p-1"
+                      title="Edit Collection"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteCollection(collection);
+                      }}
+                      className="text-gray-400 hover:text-red-400 p-1"
+                      title="Delete Collection"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded Collection Content */}
+                {isExpanded && (
+                  <div className="border-t border-gray-600">
+                    {collectionDiagrams.length === 0 ? (
+                      <p className="text-sm text-gray-400 italic p-3">No diagrams in this collection</p>
+                    ) : (
+                      collectionDiagrams.map((diagram) => {
+                        const diagramCollections = (diagram.collectionIds || [])
+                          .map(id => collections.find(c => c.id === id))
+                          .filter(Boolean) as Collection[];
+
+                        return (
+                          <div
+                            key={diagram.id}
+                            className={`border-b border-gray-600 last:border-b-0 p-3 transition-colors ${
+                              diagram.id === currentDiagramId
+                                ? 'bg-blue-600/20'
+                                : 'hover:bg-gray-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <button
+                                className="flex-1 text-left"
+                                onClick={() => onSelect(diagram)}
+                              >
+                                <h4 className={`font-medium text-sm ${diagram.id === currentDiagramId ? 'text-blue-100' : 'text-gray-100'}`}>
+                                  {diagram.name}
+                                </h4>
+                                <p className={`text-xs ${diagram.id === currentDiagramId ? 'text-blue-200' : 'text-gray-400'}`}>
+                                  Updated {new Date(diagram.updatedAt).toLocaleDateString()}
+                                </p>
+                              </button>
+
+                              <div className="flex items-center gap-2">
+                                {/* Collection badges for multi-collection diagrams */}
+                                {diagramCollections.length > 1 && (
+                                  <div className="flex items-center gap-1">
+                                    {diagramCollections
+                                      .filter(col => col.id !== collection.id)
+                                      .slice(0, 2)
+                                      .map(otherCollection => (
+                                        <CollectionBadge
+                                          key={otherCollection.id}
+                                          collection={otherCollection}
+                                          size="sm"
+                                        />
+                                      ))
+                                    }
+                                    {diagramCollections.length > 3 && (
+                                      <span className="text-xs text-gray-400">
+                                        +{diagramCollections.length - 3}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+
+                                <DiagramDropdown
+                                  diagram={diagram}
+                                  collections={collections}
+                                  isCurrentDiagram={diagram.id === currentDiagramId}
+                                  onShare={onShare}
+                                  onExport={onExportSingle}
+                                  onRename={onRename}
+                                  onDelete={onDelete}
+                                  onAddToCollection={onAddToCollection}
+                                  onRemoveFromCollection={onRemoveFromCollection}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Uncategorized Diagrams */}
+          {uncategorizedDiagrams.length > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center gap-2 px-2 py-2 text-sm text-gray-400 border-b border-gray-600">
+                <span>Uncategorized</span>
+                <span className="text-xs">({uncategorizedDiagrams.length})</span>
+              </div>
+              <div className="space-y-1 mt-2">
+                {uncategorizedDiagrams.map((diagram) => {
+                  const diagramCollections = (diagram.collectionIds || [])
+                    .map(id => collections.find(c => c.id === id))
+                    .filter(Boolean) as Collection[];
+
+                  return (
+                    <div
+                      key={diagram.id}
+                      className={`p-3 rounded-lg transition-colors ${
+                        diagram.id === currentDiagramId
+                          ? 'bg-blue-600 border-2 border-blue-400'
+                          : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <button
+                          className="flex-1 text-left"
+                          onClick={() => onSelect(diagram)}
+                        >
+                          <h3 className={`font-medium ${diagram.id === currentDiagramId ? 'text-white' : 'text-gray-100'}`}>
+                            {diagram.name}
+                          </h3>
+                          <p className={`text-sm ${diagram.id === currentDiagramId ? 'text-blue-100' : 'text-gray-400'}`}>
+                            Updated {new Date(diagram.updatedAt).toLocaleDateString()}
+                          </p>
+                        </button>
+                        
+                        <DiagramDropdown
+                          diagram={diagram}
+                          collections={collections}
+                          isCurrentDiagram={diagram.id === currentDiagramId}
+                          onShare={onShare}
+                          onExport={onExportSingle}
+                          onRename={onRename}
+                          onDelete={onDelete}
+                          onAddToCollection={onAddToCollection}
+                          onRemoveFromCollection={onRemoveFromCollection}
+                        />
+                      </div>
+
+                      {/* Collection Badges */}
+                      {diagramCollections.length > 0 && (
+                        <div className="flex items-center gap-1 mt-2 flex-wrap">
+                          {diagramCollections.slice(0, 3).map(collection => (
+                            <CollectionBadge
+                              key={collection.id}
+                              collection={collection}
+                              size="sm"
+                              showRemove
+                              onRemove={() => onRemoveFromCollection(diagram.id, collection.id)}
+                            />
+                          ))}
+                          {diagramCollections.length > 3 && (
+                            <span className="text-xs text-gray-400">
+                              +{diagramCollections.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {diagrams.length === 0 && (
             <div className="text-center text-gray-400 py-8">
               <p>No diagrams yet</p>
               <p className="text-sm mt-1">Create your first diagram or import existing ones</p>
             </div>
-          ) : (
-            diagrams.map((diagram) => {
-              const diagramCollections = (diagram.collectionIds || [])
-                .map(id => collections.find(c => c.id === id))
-                .filter(Boolean) as Collection[];
+          )}
 
-              return (
-                <div
-                  key={diagram.id}
-                  className={`relative p-3 rounded-lg shadow-sm transition-colors ${
-                    diagram.id === currentDiagramId
-                      ? 'bg-blue-600 border-2 border-blue-400'
-                      : 'bg-gray-700 hover:bg-gray-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <button
-                      className="flex-1 text-left"
-                      onClick={() => onSelect(diagram)}
-                    >
-                      <h3 className={`font-medium ${diagram.id === currentDiagramId ? 'text-white' : 'text-gray-100'}`}>
-                        {diagram.name}
-                      </h3>
-                      <p className={`text-sm ${diagram.id === currentDiagramId ? 'text-blue-100' : 'text-gray-400'}`}>
-                        Updated {new Date(diagram.updatedAt).toLocaleDateString()}
-                      </p>
-                    </button>
-                    <div className="flex space-x-1">
-                      {/* Add to Collection Button */}
-                      <div className="relative collection-menu-container">
-                        <button
-                          onClick={() => setShowCollectionMenu(
-                            showCollectionMenu === diagram.id ? null : diagram.id
-                          )}
-                          className={`p-2 rounded-full transition-colors ${
-                            diagram.id === currentDiagramId
-                              ? 'text-blue-100 hover:text-white hover:bg-blue-500'
-                              : 'text-gray-400 hover:text-purple-400 hover:bg-gray-600'
-                          }`}
-                          title="Add to Collection"
-                        >
-                          <FolderPlus className="w-4 h-4" />
-                        </button>
-                        
-                        {showCollectionMenu === diagram.id && (
-                          <div className="absolute right-0 top-10 bg-gray-800 border border-gray-600 rounded-lg shadow-lg py-1 min-w-48 z-20 max-h-60 overflow-y-auto">
-                            {collections.length === 0 ? (
-                              <div className="px-3 py-2 text-sm text-gray-400">
-                                No collections available
-                              </div>
-                            ) : (
-                              collections.map(collection => {
-                                const isInCollection = diagram.collectionIds?.includes(collection.id);
-                                return (
-                                  <button
-                                    key={collection.id}
-                                    onClick={() => {
-                                      if (isInCollection) {
-                                        onRemoveFromCollection(diagram.id, collection.id);
-                                      } else {
-                                        onAddToCollection(diagram.id, collection.id);
-                                      }
-                                      setShowCollectionMenu(null);
-                                    }}
-                                    className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors ${
-                                      isInCollection 
-                                        ? 'text-red-300 hover:text-red-200 hover:bg-gray-700'
-                                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                                    }`}
-                                  >
-                                    <div 
-                                      className="w-3 h-3 rounded-full"
-                                      style={{ backgroundColor: collection.color }}
-                                    />
-                                    <span className="truncate">{collection.name}</span>
-                                    {isInCollection && (
-                                      <span className="text-xs">✓</span>
-                                    )}
-                                  </button>
-                                );
-                              })
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={() => onShare(diagram)}
-                        className={`p-2 rounded-full transition-colors ${
-                          diagram.id === currentDiagramId
-                            ? 'text-blue-100 hover:text-white hover:bg-blue-500'
-                            : 'text-gray-400 hover:text-blue-400 hover:bg-gray-600'
-                        }`}
-                        title="Share Diagram"
-                      >
-                        <Share className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onExportSingle(diagram)}
-                        className={`p-2 rounded-full transition-colors ${
-                          diagram.id === currentDiagramId
-                            ? 'text-blue-100 hover:text-white hover:bg-blue-500'
-                            : 'text-gray-400 hover:text-green-400 hover:bg-gray-600'
-                        }`}
-                        title="Export as .mmd file"
-                      >
-                        <FileDown className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onRename(diagram)}
-                        className={`p-2 rounded-full transition-colors ${
-                          diagram.id === currentDiagramId
-                            ? 'text-blue-100 hover:text-white hover:bg-blue-500'
-                            : 'text-gray-400 hover:text-gray-200 hover:bg-gray-600'
-                        }`}
-                        title="Rename Diagram"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(diagram.id)}
-                        className={`p-2 rounded-full transition-colors ${
-                          diagram.id === currentDiagramId
-                            ? 'text-blue-100 hover:text-white hover:bg-blue-500'
-                            : 'text-gray-400 hover:text-red-400 hover:bg-gray-600'
-                        }`}
-                        title="Delete Diagram"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Collection Badges */}
-                  {diagramCollections.length > 0 && (
-                    <div className="flex items-center gap-1 mt-2 flex-wrap">
-                      {diagramCollections.slice(0, 3).map(collection => (
-                        <CollectionBadge
-                          key={collection.id}
-                          collection={collection}
-                          size="sm"
-                          showRemove
-                          onRemove={() => onRemoveFromCollection(diagram.id, collection.id)}
-                        />
-                      ))}
-                      {diagramCollections.length > 3 && (
-                        <span className="text-xs text-gray-400">
-                          +{diagramCollections.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
+          {/* No Search Results */}
+          {diagrams.length > 0 && collectionsWithDiagrams.length === 0 && uncategorizedDiagrams.length === 0 && searchTerm && (
+            <div className="text-center text-gray-400 py-8">
+              <p>No results found for "{searchTerm}"</p>
+              <button
+                onClick={() => setSearchTerm('')}
+                className="mt-2 text-blue-400 hover:text-blue-300 text-sm"
+              >
+                Clear search
+              </button>
+            </div>
           )}
         </div>
       </div>

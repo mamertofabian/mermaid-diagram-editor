@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Code, Eye, List, FolderPlus, Copy, Check, FileText, HelpCircle, Folder, FileImage } from 'lucide-react';
+import { Code, Eye, List, FolderPlus, Copy, Check, FileText, HelpCircle } from 'lucide-react';
 import CreateDiagramModal from './components/CreateDiagramModal';
 import TemplatesModal from './components/TemplatesModal';
 import HelpModal from './components/HelpModal';
@@ -7,7 +7,6 @@ import AlertModal from './components/AlertModal';
 import ConfirmModal from './components/ConfirmModal';
 import PromptModal from './components/PromptModal';
 import CollectionModal from './components/CollectionModal';
-import CollectionManager from './components/CollectionManager';
 import { diagramStorage, collectionStorage, type Diagram, type Collection } from './services/DiagramStorage';
 import { diagramExportImport } from './services/DiagramExportImport';
 import { isMermaidDiagram, generateDiagramName } from './utils/mermaidDetector';
@@ -26,7 +25,6 @@ function App() {
   const [isPreview, setIsPreview] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [sidebarView, setSidebarView] = useState<'diagrams' | 'collections'>('diagrams');
   const [copySuccess, setCopySuccess] = useState(false);
 
   // Modal states
@@ -542,8 +540,6 @@ function App() {
     onEscape: handleEscape,
     onHelp: useCallback(() => setShowHelpModal(true), []),
     onNewCollection: handleCreateCollection,
-    onSwitchToDiagrams: () => setSidebarView('diagrams'),
-    onSwitchToCollections: () => setSidebarView('collections'),
     isModalOpen,
     isPreview
   });
@@ -573,89 +569,49 @@ function App() {
               flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)]
               transform transition-all duration-500 ease-out md:transform-none md:opacity-100
             `}>
-            {/* Sidebar Tabs */}
-            <div className="flex bg-gray-700 rounded-lg mb-3">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold">My Diagrams</h2>
+            </div>
+            <div className="flex gap-2 mb-4">
               <button
-                onClick={() => setSidebarView('diagrams')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors flex-1 justify-center ${
-                  sidebarView === 'diagrams'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-600'
-                }`}
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors flex-1"
+                title="Create New Diagram"
               >
-                <FileImage className="w-4 h-4" />
-                Diagrams
+                <FolderPlus className="w-4 h-4" />
+                <span className="text-sm font-medium">New</span>
               </button>
               <button
-                onClick={() => setSidebarView('collections')}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors flex-1 justify-center ${
-                  sidebarView === 'collections'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-600'
-                }`}
+                onClick={() => setShowTemplatesModal(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-blue-700 rounded-lg hover:bg-blue-600 transition-colors flex-1"
+                title="Use Template"
               >
-                <Folder className="w-4 h-4" />
-                Collections
+                <FileText className="w-4 h-4" />
+                <span className="text-sm font-medium">Templates</span>
               </button>
             </div>
-
-            {sidebarView === 'diagrams' ? (
-              <>
-                <div className="flex justify-between items-center mb-3">
-                  <h2 className="text-lg font-semibold">My Diagrams</h2>
-                </div>
-                <div className="flex gap-2 mb-4">
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors flex-1"
-                    title="Create New Diagram"
-                  >
-                    <FolderPlus className="w-4 h-4" />
-                    <span className="text-sm font-medium">New</span>
-                  </button>
-                  <button
-                    onClick={() => setShowTemplatesModal(true)}
-                    className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-blue-700 rounded-lg hover:bg-blue-600 transition-colors flex-1"
-                    title="Use Template"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span className="text-sm font-medium">Templates</span>
-                  </button>
-                </div>
-                <div className="flex-1 min-h-0">
-                  <DiagramList
-                    diagrams={diagrams}
-                    collections={collections}
-                    currentDiagramId={currentDiagram.id}
-                    isWelcomeActive={currentDiagram.id === WELCOME_DIAGRAM.id}
-                    isTutorialActive={currentDiagram.id === TUTORIAL_DIAGRAM.id}
-                    onSelect={setCurrentDiagram}
-                    onDelete={handleDelete}
-                    onRename={handleRename}
-                    onImport={handleImport}
-                    onExportSingle={handleExportSingle}
-                    onShare={handleShare}
-                    onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
-                    onShowTutorial={() => setCurrentDiagram(TUTORIAL_DIAGRAM)}
-                    onAddToCollection={handleAddDiagramToCollection}
-                    onRemoveFromCollection={handleRemoveDiagramFromCollection}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 min-h-0">
-                <CollectionManager
-                  collections={collections}
-                  diagrams={diagrams}
-                  currentDiagramId={currentDiagram.id}
-                  onCreateCollection={handleCreateCollection}
-                  onEditCollection={handleEditCollection}
-                  onDeleteCollection={handleDeleteCollection}
-                  onSelectDiagram={setCurrentDiagram}
-                  onRemoveDiagramFromCollection={handleRemoveDiagramFromCollection}
-                />
-              </div>
-            )}
+            <div className="flex-1 min-h-0">
+              <DiagramList
+                diagrams={diagrams}
+                collections={collections}
+                currentDiagramId={currentDiagram.id}
+                isWelcomeActive={currentDiagram.id === WELCOME_DIAGRAM.id}
+                isTutorialActive={currentDiagram.id === TUTORIAL_DIAGRAM.id}
+                onSelect={setCurrentDiagram}
+                onDelete={handleDelete}
+                onRename={handleRename}
+                onImport={handleImport}
+                onExportSingle={handleExportSingle}
+                onShare={handleShare}
+                onShowWelcome={() => setCurrentDiagram(WELCOME_DIAGRAM)}
+                onShowTutorial={() => setCurrentDiagram(TUTORIAL_DIAGRAM)}
+                onAddToCollection={handleAddDiagramToCollection}
+                onRemoveFromCollection={handleRemoveDiagramFromCollection}
+                onCreateCollection={handleCreateCollection}
+                onEditCollection={handleEditCollection}
+                onDeleteCollection={handleDeleteCollection}
+              />
+            </div>
             </div>
           </>
         )}

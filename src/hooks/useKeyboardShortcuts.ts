@@ -8,8 +8,6 @@ interface KeyboardShortcutsProps {
   onEscape: () => void;
   onHelp?: () => void;
   onNewCollection?: () => void;
-  onSwitchToDiagrams?: () => void;
-  onSwitchToCollections?: () => void;
   isModalOpen?: boolean;
   isPreview?: boolean;
 }
@@ -22,8 +20,6 @@ export const useKeyboardShortcuts = ({
   onEscape,
   onHelp,
   onNewCollection,
-  onSwitchToDiagrams,
-  onSwitchToCollections,
   isModalOpen = false,
   isPreview = true
 }: KeyboardShortcutsProps) => {
@@ -86,22 +82,7 @@ export const useKeyboardShortcuts = ({
               onNewCollection();
             }
             break;
-          case 'd':
-            // Use Ctrl+Shift+D to switch to diagrams view
-            if (event.shiftKey && onSwitchToDiagrams) {
-              event.preventDefault();
-              event.stopPropagation();
-              onSwitchToDiagrams();
-            }
-            break;
         }
-      }
-      
-      // Handle Ctrl+Shift+C separately for collections view
-      if (isCtrlOrCmd && event.shiftKey && event.key.toLowerCase() === 'c' && onSwitchToCollections) {
-        event.preventDefault();
-        event.stopPropagation();
-        onSwitchToCollections();
       }
     };
 
@@ -110,5 +91,5 @@ export const useKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onSave, onNew, onToggleView, onEscape, onHelp, onNewCollection, onSwitchToDiagrams, onSwitchToCollections, isModalOpen, isPreview]);
+  }, [onCopy, onSave, onNew, onToggleView, onEscape, onHelp, onNewCollection, isModalOpen, isPreview]);
 };
