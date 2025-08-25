@@ -418,9 +418,19 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging) {
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
+      // Normalize panning speed based on zoom level to maintain natural feel
+      const panningSpeed = 1 / zoomLevel;
+      const deltaX = (e.clientX - dragStart.x) * panningSpeed;
+      const deltaY = (e.clientY - dragStart.y) * panningSpeed;
+      
+      // Calculate new position based on normalized delta
+      const newX = scrollPosition.x + deltaX;
+      const newY = scrollPosition.y + deltaY;
+      
       setScrollPosition({ x: newX, y: newY });
+      
+      // Update drag start for next movement
+      setDragStart({ x: e.clientX - deltaX / panningSpeed, y: e.clientY - deltaY / panningSpeed });
     }
   };
 
@@ -447,7 +457,9 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
 
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const panStep = 20; // Pixels to move per key press
+    // Normalize panning step based on zoom level to maintain natural feel
+    const basePanStep = 20; // Base pixels to move per key press
+    const panStep = basePanStep / zoomLevel;
     
     switch (e.key) {
       case 'ArrowUp':
@@ -518,9 +530,19 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       
       if (e.touches.length === 1 && isDragging) {
         const touch = e.touches[0];
-        const newX = touch.clientX - dragStart.x;
-        const newY = touch.clientY - dragStart.y;
+        // Normalize panning speed based on zoom level to maintain natural feel
+        const panningSpeed = 1 / zoomLevel;
+        const deltaX = (touch.clientX - dragStart.x) * panningSpeed;
+        const deltaY = (touch.clientY - dragStart.y) * panningSpeed;
+        
+        // Calculate new position based on normalized delta
+        const newX = scrollPosition.x + deltaX;
+        const newY = scrollPosition.y + deltaY;
+        
         setScrollPosition({ x: newX, y: newY });
+        
+        // Update drag start for next movement
+        setDragStart({ x: touch.clientX - deltaX / panningSpeed, y: touch.clientY - deltaY / panningSpeed });
       } else if (e.touches.length === 2 && lastTouchDistance > 0) {
         const currentDistance = getTouchDistance(e.touches);
         const scale = currentDistance / lastTouchDistance;
