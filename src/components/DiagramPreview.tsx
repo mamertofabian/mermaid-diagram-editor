@@ -38,6 +38,7 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [initialScrollPosition, setInitialScrollPosition] = useState({ x: 0, y: 0 });
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const [isPanningEnabled, setIsPanningEnabled] = useState(true);
   const [lastTouchDistance, setLastTouchDistance] = useState(0);
@@ -405,32 +406,33 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
     // Always allow right-click panning regardless of toggle state
     if (e.button === 2) {
       setIsDragging(true);
-      setDragStart({ x: e.clientX - scrollPosition.x, y: e.clientY - scrollPosition.y });
+      setDragStart({ x: e.clientX, y: e.clientY });
+      setInitialScrollPosition(scrollPosition);
       return;
     }
     
     // Left-click panning only when enabled
     if (e.button === 0 && isPanningEnabled) {
       setIsDragging(true);
-      setDragStart({ x: e.clientX - scrollPosition.x, y: e.clientY - scrollPosition.y });
+      setDragStart({ x: e.clientX, y: e.clientY });
+      setInitialScrollPosition(scrollPosition);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging) {
-      // Normalize panning speed based on zoom level to maintain natural feel
-      const panningSpeed = 1 / zoomLevel;
-      const deltaX = (e.clientX - dragStart.x) * panningSpeed;
-      const deltaY = (e.clientY - dragStart.y) * panningSpeed;
+      // Guard against division by zero
+      const effectiveZoom = Math.max(zoomLevel || 0.1, 0.1);
       
-      // Calculate new position based on normalized delta
-      const newX = scrollPosition.x + deltaX;
-      const newY = scrollPosition.y + deltaY;
+      // Calculate movement delta from initial drag position
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+      
+      // Apply zoom-normalized movement to initial scroll position
+      const newX = initialScrollPosition.x + deltaX / effectiveZoom;
+      const newY = initialScrollPosition.y + deltaY / effectiveZoom;
       
       setScrollPosition({ x: newX, y: newY });
-      
-      // Update drag start for next movement
-      setDragStart({ x: e.clientX - deltaX / panningSpeed, y: e.clientY - deltaY / panningSpeed });
     }
   };
 
@@ -459,7 +461,8 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Normalize panning step based on zoom level to maintain natural feel
     const basePanStep = 20; // Base pixels to move per key press
-    const panStep = basePanStep / zoomLevel;
+    const effectiveZoom = Math.max(zoomLevel || 0.1, 0.1);
+    const panStep = basePanStep / effectiveZoom;
     
     switch (e.key) {
       case 'ArrowUp':
@@ -517,7 +520,8 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       if (e.touches.length === 1) {
         const touch = e.touches[0];
         setIsDragging(true);
-        setDragStart({ x: touch.clientX - scrollPosition.x, y: touch.clientY - scrollPosition.y });
+        setDragStart({ x: touch.clientX, y: touch.clientY });
+        setInitialScrollPosition(scrollPosition);
       } else if (e.touches.length === 2) {
         setIsDragging(false);
         const distance = getTouchDistance(e.touches);
@@ -530,19 +534,19 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       
       if (e.touches.length === 1 && isDragging) {
         const touch = e.touches[0];
-        // Normalize panning speed based on zoom level to maintain natural feel
-        const panningSpeed = 1 / zoomLevel;
-        const deltaX = (touch.clientX - dragStart.x) * panningSpeed;
-        const deltaY = (touch.clientY - dragStart.y) * panningSpeed;
         
-        // Calculate new position based on normalized delta
-        const newX = scrollPosition.x + deltaX;
-        const newY = scrollPosition.y + deltaY;
+        // Guard against division by zero
+        const effectiveZoom = Math.max(zoomLevel || 0.1, 0.1);
+        
+        // Calculate movement delta from initial drag position
+        const deltaX = touch.clientX - dragStart.x;
+        const deltaY = touch.clientY - dragStart.y;
+        
+        // Apply zoom-normalized movement to initial scroll position
+        const newX = initialScrollPosition.x + deltaX / effectiveZoom;
+        const newY = initialScrollPosition.y + deltaY / effectiveZoom;
         
         setScrollPosition({ x: newX, y: newY });
-        
-        // Update drag start for next movement
-        setDragStart({ x: touch.clientX - deltaX / panningSpeed, y: touch.clientY - deltaY / panningSpeed });
       } else if (e.touches.length === 2 && lastTouchDistance > 0) {
         const currentDistance = getTouchDistance(e.touches);
         const scale = currentDistance / lastTouchDistance;
@@ -573,7 +577,7 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       element.removeEventListener('touchmove', touchMoveHandler);
       element.removeEventListener('touchend', touchEndHandler);
     };
-  }, [isDragging, dragStart, scrollPosition, lastTouchDistance, zoomLevel]);
+  }, [isDragging, dragStart, scrollPosition, initialScrollPosition, lastTouchDistance, zoomLevel]);
 
 
   return (
