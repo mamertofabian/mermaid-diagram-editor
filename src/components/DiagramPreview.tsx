@@ -43,6 +43,18 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
   const [isPanningEnabled, setIsPanningEnabled] = useState(true);
   const [lastTouchDistance, setLastTouchDistance] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
+
+  // Helper function to create error content using DOM APIs
+  const createErrorContent = () => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex items-center justify-center h-full';
+    const message = document.createElement('p');
+    message.className = 'text-red-400 font-medium';
+    message.textContent = 'Invalid Mermaid syntax';
+    wrapper.appendChild(message);
+    return wrapper;
+  };
 
   useEffect(() => {
     mermaid.initialize({
@@ -52,6 +64,21 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
       logLevel: 'error',
     });
   }, []);
+
+  // Handle page visibility changes to fix issues with background tabs
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible after being hidden - trigger re-render to fix stale state
+        setRenderKey(prev => prev + 1);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []); // Only runs once - no dependencies needed
 
   useEffect(() => {
     const renderDiagram = async () => {
@@ -75,6 +102,9 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
         // Render diagram
         const { svg } = await mermaid.render(id, code);
         
+        // Guard against component unmount after async render
+        if (!contentRef.current) return;
+        
         // Insert the rendered SVG
         contentRef.current.innerHTML = svg;
 
@@ -85,11 +115,7 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
         console.error('Mermaid rendering error:', error);
         
         // Clear any partial renders and show error in content area
-        contentRef.current.innerHTML = `
-          <div class="flex items-center justify-center h-full">
-            <p class="text-red-400 font-medium">Invalid Mermaid syntax</p>
-          </div>
-        `;
+        contentRef.current.replaceChildren(createErrorContent());
         
         // Reset zoom and scroll on error too
         setZoomLevel(1);
@@ -98,7 +124,7 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
     };
 
     renderDiagram();
-  }, [code, theme]);
+  }, [code, theme, renderKey]);
 
   // Toggle between light and dark background themes
   // Note: This changes the container background, not the diagram content
