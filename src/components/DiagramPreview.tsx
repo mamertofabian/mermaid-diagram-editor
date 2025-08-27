@@ -53,6 +53,58 @@ export default function DiagramPreview({ code, diagramName, theme, onThemeChange
     });
   }, []);
 
+  // Handle page visibility changes to fix issues with background tabs
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && contentRef.current) {
+        // Page became visible after being hidden - re-render diagram to fix stale state
+        const renderDiagram = async () => {
+          if (!contentRef.current) return;
+          
+          try {
+            // Clear previous content and any error states
+            contentRef.current.innerHTML = '';
+            
+            // Re-initialize Mermaid to clear any stale state
+            mermaid.initialize({
+              startOnLoad: false,
+              theme: 'default',
+              securityLevel: 'loose',
+              logLevel: 'error',
+            });
+            
+            // Generate unique ID
+            const id = `mermaid-${Math.random().toString(36).slice(2)}`;
+            
+            // Render diagram
+            const { svg } = await mermaid.render(id, code);
+            
+            // Insert the rendered SVG
+            contentRef.current.innerHTML = svg;
+          } catch (error) {
+            console.error('Mermaid re-rendering error on visibility change:', error);
+            
+            // Show error in content area if contentRef is still available
+            if (contentRef.current) {
+              contentRef.current.innerHTML = `
+                <div class="flex items-center justify-center h-full">
+                  <p class="text-red-400 font-medium">Invalid Mermaid syntax</p>
+                </div>
+              `;
+            }
+          }
+        };
+
+        renderDiagram();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [code]);
+
   useEffect(() => {
     const renderDiagram = async () => {
       if (!contentRef.current) return;
