@@ -4,6 +4,10 @@
   "version": "1.0.0",
   "description": "A modern web-based editor for creating and managing Mermaid diagrams with real-time preview",
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
